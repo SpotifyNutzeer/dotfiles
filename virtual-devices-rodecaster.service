@@ -1,0 +1,39 @@
+[Unit]
+Description=Virtual Sinks (Music, VirtualA, VirtualB, Game) to RODECaster AUX2-9
+After=pipewire-pulse.service
+Requires=pipewire-pulse.service
+
+[Service]
+Type=oneshot
+RemainAfterExit=yes
+ExecStart=/bin/bash -c '\
+  pactl load-module module-null-sink sink_name=music sink_properties=device.description="Musik" && \
+  pactl load-module module-null-sink sink_name=virtuala sink_properties=device.description="VirtualA" && \
+  pactl load-module module-null-sink sink_name=browser sink_properties=device.description="VirtualB" && \
+  pactl load-module module-null-sink sink_name=game sink_properties=device.description="Game" && \
+  sleep 2 && \
+  pw-link "game:monitor_FL" "alsa_output.usb-R__DE_RODECaster_Duo_IR0050002-00.pro-output-1:playback_AUX2" && \
+  pw-link "game:monitor_FR" "alsa_output.usb-R__DE_RODECaster_Duo_IR0050002-00.pro-output-1:playback_AUX3" && \
+  pw-link "music:monitor_FL" "alsa_output.usb-R__DE_RODECaster_Duo_IR0050002-00.pro-output-1:playback_AUX4" && \
+  pw-link "music:monitor_FR" "alsa_output.usb-R__DE_RODECaster_Duo_IR0050002-00.pro-output-1:playback_AUX5" && \
+  pw-link "virtuala:monitor_FL" "alsa_output.usb-R__DE_RODECaster_Duo_IR0050002-00.pro-output-1:playback_AUX6" && \
+  pw-link "virtuala:monitor_FR" "alsa_output.usb-R__DE_RODECaster_Duo_IR0050002-00.pro-output-1:playback_AUX7" && \
+  pw-link "browser:monitor_FL" "alsa_output.usb-R__DE_RODECaster_Duo_IR0050002-00.pro-output-1:playback_AUX8" && \
+  pw-link "browser:monitor_FR" "alsa_output.usb-R__DE_RODECaster_Duo_IR0050002-00.pro-output-1:playback_AUX9"'
+
+ExecStop=/bin/bash -c '\
+  pw-link -d "game:monitor_FL" "alsa_output.usb-R__DE_RODECaster_Duo_IR0050002-00.pro-output-1:playback_AUX2" 2>/dev/null ; \
+  pw-link -d "game:monitor_FR" "alsa_output.usb-R__DE_RODECaster_Duo_IR0050002-00.pro-output-1:playback_AUX3" 2>/dev/null ; \
+  pw-link -d "music:monitor_FL" "alsa_output.usb-R__DE_RODECaster_Duo_IR0050002-00.pro-output-1:playback_AUX4" 2>/dev/null ; \
+  pw-link -d "music:monitor_FR" "alsa_output.usb-R__DE_RODECaster_Duo_IR0050002-00.pro-output-1:playback_AUX5" 2>/dev/null ; \
+  pw-link -d "virtuala:monitor_FL" "alsa_output.usb-R__DE_RODECaster_Duo_IR0050002-00.pro-output-1:playback_AUX6" 2>/dev/null ; \
+  pw-link -d "virtuala:monitor_FR" "alsa_output.usb-R__DE_RODECaster_Duo_IR0050002-00.pro-output-1:playback_AUX7" 2>/dev/null ; \
+  pw-link -d "browser:monitor_FL" "alsa_output.usb-R__DE_RODECaster_Duo_IR0050002-00.pro-output-1:playback_AUX8" 2>/dev/null ; \
+  pw-link -d "browser:monitor_FR" "alsa_output.usb-R__DE_RODECaster_Duo_IR0050002-00.pro-output-1:playback_AUX9" 2>/dev/null ; \
+  pactl unload-module module-null-sink'
+
+Restart=no
+
+[Install]
+WantedBy=default.target
+
