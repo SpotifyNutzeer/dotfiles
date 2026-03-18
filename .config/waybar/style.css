@@ -1,0 +1,159 @@
+/* Catppuccin Mocha */
+@define-color base     #1e1e2e;
+@define-color mantle   #181825;
+@define-color crust    #11111b;
+@define-color surface0 #313244;
+@define-color surface1 #45475a;
+@define-color surface2 #585b70;
+@define-color overlay0 #6c7086;
+@define-color text     #cdd6f4;
+@define-color subtext0 #a6adc8;
+@define-color blue     #89b4fa;
+@define-color mauve    #cba6f7;
+@define-color green    #a6e3a1;
+@define-color yellow   #f9e2af;
+@define-color peach    #fab387;
+@define-color red      #f38ba8;
+@define-color teal     #94e2d5;
+@define-color sky      #89dceb;
+@define-color sapphire #74c7ec;
+@define-color pink     #f5c2e7;
+
+* {
+    font-family: "JetBrainsMono Nerd Font", "Noto Sans", monospace;
+    font-size: 13px;
+    min-height: 0;
+    border: none;
+    border-radius: 0;
+}
+
+window#waybar {
+    background-color: alpha(@base, 1);
+    border: 1px solid alpha(@surface1, 0.6);
+    border-radius: 14px;
+    color: @text;
+}
+
+.modules-left,
+.modules-center,
+.modules-right {
+    background: transparent;
+}
+
+/* Base widget style */
+widget > * {
+    padding: 0 10px;
+    margin: 4px 2px;
+    background-color: @surface0;
+    border-radius: 8px;
+    color: @text;
+}
+
+/* Workspaces */
+#workspaces {
+    background-color: transparent;
+    padding: 0 2px;
+}
+
+#workspaces button {
+    padding: 0 8px;
+    margin: 4px 2px;
+    background-color: @surface0;
+    border-radius: 8px;
+    color: @subtext0;
+    transition: all 0.2s ease;
+}
+
+#workspaces button:hover {
+    background-color: @surface1;
+    color: @text;
+}
+
+#workspaces button.active {
+    background-color: @blue;
+    color: @base;
+    font-weight: bold;
+}
+
+#workspaces button.urgent {
+    background-color: @red;
+    color: @base;
+}
+
+/* CPU */
+#cpu {
+    color: @green;
+}
+
+/* CPU Power */
+#custom-cpu-power {
+    color: @peach;
+}
+
+/* GPU Power */
+#custom-gpu-power {
+    color: @peach;
+}
+
+/* Temperature */
+#temperature {
+    color: @yellow;
+}
+
+#temperature.critical {
+    color: @red;
+    animation: blink 1s infinite;
+}
+
+/* Memory */
+#memory {
+    color: @mauve;
+}
+
+/* GPU */
+#custom-gpu-usage {
+    color: @teal;
+}
+
+#custom-gpu-vram {
+    color: @sapphire;
+}
+
+/* Network */
+#network {
+    color: @sky;
+}
+
+/* Power menu */
+#custom-powermenu {
+    color: @red;
+}
+
+#custom-powermenu:hover {
+    color: @base;
+    background-color: @red;
+}
+
+/* Tray */
+#tray {
+    color: @text;
+}
+
+#tray > .passive {
+    -gtk-icon-effect: dim;
+}
+
+#tray > .needs-attention {
+    background-color: alpha(@red, 0.3);
+    border-radius: 8px;
+}
+
+/* Clock */
+#clock {
+    color: @pink;
+    font-weight: bold;
+}
+
+@keyframes blink {
+    to { background-color: alpha(@red, 0.3); }
+}
