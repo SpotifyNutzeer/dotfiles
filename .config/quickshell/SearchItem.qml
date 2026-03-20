@@ -2,9 +2,10 @@ import QtQuick
 import QtQuick.Layouts
 
 Item {
-    property string itemIcon:  ""
-    property color  itemColor: "#cdd6f4"
-    property string itemLabel: ""
+    property string itemIcon:     ""
+    property string itemIconPath: ""
+    property color  itemColor:    "#cdd6f4"
+    property string itemLabel:    ""
 
     signal activated()
 
@@ -24,16 +25,28 @@ Item {
         }
         spacing: 10
 
+        // Real icon image (if path resolved)
+        Image {
+            visible: itemIconPath !== ""
+            source:  itemIconPath !== "" ? "file://" + itemIconPath : ""
+            width:  20; height: 20
+            sourceSize: Qt.size(20, 20)
+            fillMode: Image.PreserveAspectFit
+            smooth: true
+        }
+
+        // Nerd Font fallback (shown when no image path)
         Text {
-            text:  itemIcon
-            color: itemColor
-            font  { family: "JetBrainsMono Nerd Font"; pixelSize: 14 }
+            visible: itemIconPath === ""
+            text:    itemIcon
+            color:   itemColor
+            font     { family: "JetBrainsMono Nerd Font"; pixelSize: 14 }
         }
 
         Text {
             text:  itemLabel
             color: "#cdd6f4"
-            font  { family: "JetBrainsMono Nerd Font"; pixelSize: 13 }
+            font   { family: "JetBrainsMono Nerd Font"; pixelSize: 13 }
             elide: Text.ElideRight
             Layout.fillWidth: true
         }

@@ -43,6 +43,14 @@ PanelWindow {
     implicitWidth: 380
     exclusiveZone: 0
     color: "transparent"
+    visible: panelOpen || hideTimer.running
+
+    onPanelOpenChanged: { if (!panelOpen) hideTimer.start() }
+
+    Timer {
+        id: hideTimer
+        interval: 320  // slightly longer than the 300ms slide animation
+    }
 
     // ── Notification server ──────────────────────────────────────────────────
     NotificationServer {
@@ -68,16 +76,17 @@ PanelWindow {
     property var activePlayer: {
         var list = Mpris.players.values ?? Mpris.players
         if (!list || list.length === 0) return null
-        for (var i = 0; i < list.length; i++) {
-            var p = list[i]
-            if (p && p.identity && p.identity.toLowerCase().indexOf("tidal") >= 0)
-                return p
-        }
-        for (var i = 0; i < list.length; i++) {
-            var p = list[i]
-            if (p && p.playbackState === MprisPlaybackState.Playing)
-                return p
-        }
+        // 1. Tidal playing
+        for (var i = 0; i < list.length; i++)
+            if (list[i].identity?.toLowerCase().includes("tidal") &&
+                list[i].playbackState === MprisPlaybackState.Playing) return list[i]
+        // 2. Any other source playing
+        for (var i = 0; i < list.length; i++)
+            if (list[i].playbackState === MprisPlaybackState.Playing) return list[i]
+        // 3. Tidal paused
+        for (var i = 0; i < list.length; i++)
+            if (list[i].identity?.toLowerCase().includes("tidal")) return list[i]
+        // 4. First available
         return list[0] ?? null
     }
 

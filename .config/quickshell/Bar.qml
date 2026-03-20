@@ -1,6 +1,7 @@
 import Quickshell
 import Quickshell.Hyprland
 import Quickshell.Services.SystemTray
+import Quickshell.Services.Mpris
 import Quickshell.Widgets
 import Quickshell.Io
 import QtQuick
@@ -81,6 +82,54 @@ PanelWindow {
     property string netDown:   "0K"
     property string netUp:     "0K"
     property string clockTime: Qt.formatTime(new Date(), "hh:mm")
+
+    // ── MPRIS ─────────────────────────────────────────────────────────────────
+    property var activePlayer: {
+        var list = Mpris.players.values ?? Mpris.players
+        // 1. Tidal playing
+        for (var i = 0; i < list.length; i++)
+            if (list[i].identity?.toLowerCase().includes("tidal") &&
+                list[i].playbackState === MprisPlaybackState.Playing) return list[i]
+        // 2. Any other source playing
+        for (var i = 0; i < list.length; i++)
+            if (list[i].playbackState === MprisPlaybackState.Playing) return list[i]
+        // 3. Tidal paused
+        for (var i = 0; i < list.length; i++)
+            if (list[i].identity?.toLowerCase().includes("tidal")) return list[i]
+        // 4. First available
+        return list.length > 0 ? list[0] : null
+    }
+    property string songText: {
+        if (!activePlayer) return ""
+        var t = activePlayer.trackTitle  || ""
+        var a = activePlayer.trackArtist || ""
+        if (a && t) return a + "  –  " + t
+        return t || a
+    }
+
+    property real trackPosition: 0
+    property real trackLength:   activePlayer ? (activePlayer.length   ?? 0) : 0
+
+    onActivePlayerChanged: trackPosition = activePlayer ? (activePlayer.position ?? 0) : 0
+
+    // Tick position forward every second while playing
+    Timer {
+        interval: 1000; repeat: true
+        running: bar.activePlayer !== null &&
+                 bar.activePlayer.playbackState === MprisPlaybackState.Playing
+        onTriggered: {
+            if (bar.activePlayer)
+                bar.trackPosition = bar.activePlayer.position ?? (bar.trackPosition + 1000000)
+        }
+    }
+
+    function formatTime(us) {
+        if (!us || us <= 0) return "0:00"
+        var s = Math.floor(us / 1000000)
+        var m = Math.floor(s / 60)
+        s = s % 60
+        return m + ":" + (s < 10 ? "0" : "") + s
+    }
 
     Timer {
         interval: 1000; running: true; repeat: true
@@ -300,6 +349,172 @@ PanelWindow {
             }
         }
 
+        // ── Music island: track + controls + progress ────────────────────────
+        Rectangle {
+            id: musicIsland
+            anchors.verticalCenter: parent.verticalCenter
+            x: (leftIsland.x + leftIsland.width + centerIsland.x) / 2 - width / 2
+            height:  parent.height - 4
+            radius:  12
+            color:   bar.clrBase
+            border   { color: Qt.rgba(0.706, 0.745, 0.996, 0.55); width: 2 }
+            visible: bar.activePlayer !== null
+            width:   musicRow.implicitWidth + 20
+
+            RowLayout {
+                id: musicRow
+                anchors.centerIn: parent
+                spacing: 8
+
+                // ── Icon + Title ─────────────────────────────────────────────
+                Text {
+                    text:  "󰝚"
+                    color: bar.clrMauve
+                    font   { family: "JetBrainsMono Nerd Font"; pixelSize: 13 }
+                }
+                // Scrolling title
+                Item {
+                    id: titleClip
+                    implicitWidth: 180
+                    implicitHeight: scrollText.implicitHeight
+                    clip: true
+                    Layout.alignment: Qt.AlignVCenter
+
+                    Text {
+                        id: scrollText
+                        text:  bar.songText
+                        color: bar.clrText
+                        font   { family: "JetBrainsMono Nerd Font"; pixelSize: 12 }
+
+                        onTextChanged: {
+                            scrollText.x = 0
+                            marquee.stop()
+                            marqueeDelay.restart()
+                        }
+
+                        Component.onCompleted: marqueeDelay.restart()
+                    }
+
+                    // Small delay before starting so text width is measured
+                    Timer {
+                        id: marqueeDelay
+                        interval: 100
+                        onTriggered: {
+                            if (scrollText.implicitWidth > titleClip.implicitWidth)
+                                marquee.restart()
+                        }
+                    }
+
+                    SequentialAnimation {
+                        id: marquee
+                        loops: Animation.Infinite
+
+                        PauseAnimation   { duration: 2000 }
+                        NumberAnimation  {
+                            target: scrollText; property: "x"
+                            to: -(scrollText.implicitWidth - titleClip.implicitWidth)
+                            duration: Math.max(0, scrollText.implicitWidth - titleClip.implicitWidth) * 22
+                            easing.type: Easing.Linear
+                        }
+                        PauseAnimation   { duration: 1500 }
+                        NumberAnimation  {
+                            target: scrollText; property: "x"
+                            to: 0
+                            duration: Math.max(0, scrollText.implicitWidth - titleClip.implicitWidth) * 22
+                            easing.type: Easing.InOutCubic
+                        }
+                    }
+                }
+
+                Rectangle { width: 1; height: 20; color: bar.clrSurface1 }
+
+                // ── Controls ─────────────────────────────────────────────────
+                Text {
+                    text: "󰒮"
+                    color: bar.clrSubtext0
+                    font  { family: "JetBrainsMono Nerd Font"; pixelSize: 14 }
+                    MouseArea {
+                        anchors.fill: parent; cursorShape: Qt.PointingHandCursor
+                        onClicked: { if (bar.activePlayer) bar.activePlayer.previous() }
+                    }
+                }
+                Text {
+                    text: (bar.activePlayer && bar.activePlayer.playbackState === MprisPlaybackState.Playing)
+                          ? "󰏥" : "󰐊"
+                    color: bar.clrLavender
+                    font  { family: "JetBrainsMono Nerd Font"; pixelSize: 16 }
+                    MouseArea {
+                        anchors.fill: parent; cursorShape: Qt.PointingHandCursor
+                        onClicked: {
+                            if (!bar.activePlayer) return
+                            if (bar.activePlayer.playbackState === MprisPlaybackState.Playing)
+                                bar.activePlayer.pause()
+                            else
+                                bar.activePlayer.play()
+                        }
+                    }
+                }
+                Text {
+                    text: "󰒭"
+                    color: bar.clrSubtext0
+                    font  { family: "JetBrainsMono Nerd Font"; pixelSize: 14 }
+                    MouseArea {
+                        anchors.fill: parent; cursorShape: Qt.PointingHandCursor
+                        onClicked: { if (bar.activePlayer) bar.activePlayer.next() }
+                    }
+                }
+
+                Rectangle { width: 1; height: 20; color: bar.clrSurface1 }
+
+                // ── Progress ─────────────────────────────────────────────────
+                Text {
+                    text:  bar.formatTime(bar.trackPosition)
+                    color: bar.clrSubtext0
+                    font   { family: "JetBrainsMono Nerd Font"; pixelSize: 11 }
+                }
+
+                Item {
+                    implicitWidth: 90
+                    implicitHeight: 4
+                    Layout.alignment: Qt.AlignVCenter
+
+                    // Track
+                    Rectangle {
+                        anchors.fill: parent
+                        radius: 2
+                        color: bar.clrSurface1
+                    }
+                    // Fill
+                    Rectangle {
+                        width: bar.trackLength > 0
+                               ? parent.width * Math.min(bar.trackPosition / bar.trackLength, 1)
+                               : 0
+                        height: parent.height
+                        radius: 2
+                        color: bar.clrLavender
+                    }
+                    // Click to seek
+                    MouseArea {
+                        anchors { fill: parent; margins: -6 }
+                        cursorShape: Qt.PointingHandCursor
+                        onClicked: mouse => {
+                            if (bar.activePlayer && bar.trackLength > 0) {
+                                var pos = Math.max(0, Math.min(mouse.x / width, 1)) * bar.trackLength
+                                bar.activePlayer.position = pos
+                                bar.trackPosition = pos
+                            }
+                        }
+                    }
+                }
+
+                Text {
+                    text:  bar.formatTime(bar.trackLength)
+                    color: bar.clrSubtext0
+                    font   { family: "JetBrainsMono Nerd Font"; pixelSize: 11 }
+                }
+            }
+        }
+
         // ── Center island: Stats ─────────────────────────────────────────────
         Rectangle {
             id: centerIsland
@@ -333,6 +548,7 @@ PanelWindow {
 
                 StatItem { icon: "󰁆"; value: bar.netDown; iconColor: bar.clrBlue;    textColor: bar.clrText }
                 StatItem { icon: "󰁞"; value: bar.netUp;   iconColor: bar.clrSapphire; textColor: bar.clrText }
+
             }
         }
 

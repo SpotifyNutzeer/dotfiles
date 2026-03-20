@@ -27,15 +27,20 @@ ShellRoot {
         onPanelToggled:        root.sidePanelOpen = !root.sidePanelOpen
         onSearchOpenRequested: root.searchOpen = true
         onSearchQueryUpdated:  q => root.searchQuery = q
-        onSearchEnterPressed:  searchResults.launchFirst()
+        onSearchEnterPressed:  { if (searchLoader.item) searchLoader.item.launchFirst() }
         onSearchClosed:        { root.searchOpen = false; root.searchQuery = "" }
     }
 
-    SearchResults {
-        id: searchResults
-        searchOpen:  root.searchOpen
-        searchQuery: root.searchQuery
-        onLaunchCalled: { root.searchOpen = false; root.searchQuery = "" }
+    Loader {
+        id: searchLoader
+        active: root.searchOpen
+        sourceComponent: Component {
+            SearchResults {
+                searchOpen:  root.searchOpen
+                searchQuery: root.searchQuery
+                onLaunchCalled: { root.searchOpen = false; root.searchQuery = "" }
+            }
+        }
     }
 
     SidePanel {

@@ -37,7 +37,6 @@ PanelWindow {
     implicitHeight: Math.min(mainCol.implicitHeight + 16, 520)
     exclusiveZone:  0
     color: "transparent"
-    visible: results.searchOpen
 
     // ── App loading (once at startup) ────────────────────────────────────────
     property var allApps: []
@@ -45,7 +44,7 @@ PanelWindow {
 
     Process {
         id: appLoader
-        command: ["/bin/bash", Qt.resolvedUrl("scripts/list-apps.sh").toString().replace("file://", "")]
+        command: ["python3", Qt.resolvedUrl("scripts/list-apps.py").toString().replace("file://", "")]
         running: true
         stdout: SplitParser {
             splitMarker: "\n"
@@ -53,7 +52,7 @@ PanelWindow {
                 if (!d.trim()) return
                 var p = d.split("|")
                 if (p.length >= 2 && p[0].trim() && p[1].trim())
-                    results._buf.push({ name: p[0].trim(), exec: p[1].trim() })
+                    results._buf.push({ name: p[0].trim(), exec: p[1].trim(), iconPath: (p[2] || "").trim() })
             }
         }
         onRunningChanged: { if (!running) results.allApps = results._buf.slice() }
@@ -147,10 +146,11 @@ PanelWindow {
                         delegate: SearchItem {
                             required property var modelData
                             Layout.fillWidth: true
-                            itemIcon:  "󰀻"
-                            itemColor: results.clrBlue
-                            itemLabel: modelData.name
-                            onActivated: results.launch(modelData.exec)
+                            itemIcon:     "󰀻"
+                            itemIconPath: modelData.iconPath
+                            itemColor:    results.clrBlue
+                            itemLabel:    modelData.name
+                            onActivated:  results.launch(modelData.exec)
                         }
                     }
 
