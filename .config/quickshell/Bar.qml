@@ -12,26 +12,12 @@ PanelWindow {
 
     signal panelToggled()
 
-    // ── Search state ─────────────────────────────────────────────────────────
-    property bool   searchOpen:  false
-    property string searchQuery: ""
-    signal searchOpenRequested()
-    signal searchQueryUpdated(string q)
-    signal searchEnterPressed()
-    signal searchClosed()
-
-    onSearchOpenChanged: {
-        if (searchOpen) {
-            searchInput.text = ""
-            focusTimer.start()
-        }
+    Process {
+        id: rofiProc
+        command: ["rofi", "-show", "drun"]
     }
 
-    Timer {
-        id: focusTimer
-        interval: 50
-        onTriggered: searchInput.forceActiveFocus()
-    }
+    function launchRofi() { rofiProc.running = true }
 
     // ── Catppuccin Mocha ─────────────────────────────────────────────────────
     readonly property color clrBase:     "#1e1e2e"
@@ -54,7 +40,7 @@ PanelWindow {
     // ── Screen ───────────────────────────────────────────────────────────────
     screen: {
         for (var i = 0; i < Quickshell.screens.length; i++)
-            if (Quickshell.screens[i].name === "HDMI-A-1")
+            if (Quickshell.screens[i].name === "DP-1")
                 return Quickshell.screens[i]
         return Quickshell.screens[0]
     }
@@ -63,25 +49,56 @@ PanelWindow {
     margins { top: 8; left: 12; right: 12 }
     implicitHeight: 44
     exclusiveZone: 52
-    focusable: true
     color: "transparent"
-
-    HyprlandFocusGrab {
-        windows: [ bar ]
-        active: bar.searchOpen
-    }
 
     // ── Stats state ──────────────────────────────────────────────────────────
     property string cpuUsage:  "0"
+    property string cpuClock:  "0MHz"
     property string cpuPower:  "0W"
     property string cpuTemp:   "0"
     property string ramUsed:   "0.0"
     property string gpuUsage:  "0"
+    property string gpuClock:  "0MHz"
     property string gpuPower:  "0W"
+    property string gpuTemp:   "0"
     property string gpuVram:   "0M"
     property string netDown:   "0K"
     property string netUp:     "0K"
-    property string clockTime: Qt.formatTime(new Date(), "hh:mm")
+    property string clockTime:   Qt.formatTime(new Date(), "hh:mm")
+    property string windowTitle: ""
+
+    // ── Visualizer state ─────────────────────────────────────────────────────
+    property var  barValues:   []
+    property bool hasAudio:    false
+    property real silenceSecs: 0
+
+    Timer {
+        interval: 500; running: true; repeat: true
+        onTriggered: {
+            var loud = bar.barValues.some(v => v > 2)
+            if (loud) {
+                bar.hasAudio    = true
+                bar.silenceSecs = 0
+            } else {
+                bar.silenceSecs += 0.5
+                if (bar.silenceSecs >= 4) bar.hasAudio = false
+            }
+        }
+    }
+
+    Process {
+        command: ["cava", "-p",
+                  Qt.resolvedUrl("scripts/cava.ini").toString().replace("file://", "")]
+        running: true
+        stdout: SplitParser {
+            splitMarker: "\n"
+            onRead: d => {
+                var parts = d.trim().split(" ")
+                if (parts.length > 1)
+                    bar.barValues = parts.map(v => Math.max(0, parseInt(v) || 0))
+            }
+        }
+    }
 
     // ── MPRIS ─────────────────────────────────────────────────────────────────
     property var activePlayer: {
@@ -108,7 +125,7 @@ PanelWindow {
     }
 
     property real trackPosition: 0
-    property real trackLength:   activePlayer ? (activePlayer.length   ?? 0) : 0
+    property real trackLength:   activePlayer ? (activePlayer.length ?? 0) : 0
 
     onActivePlayerChanged: trackPosition = activePlayer ? (activePlayer.position ?? 0) : 0
 
@@ -119,13 +136,13 @@ PanelWindow {
                  bar.activePlayer.playbackState === MprisPlaybackState.Playing
         onTriggered: {
             if (bar.activePlayer)
-                bar.trackPosition = bar.activePlayer.position ?? (bar.trackPosition + 1000000)
+                bar.trackPosition = bar.activePlayer.position ?? (bar.trackPosition + 1)
         }
     }
 
-    function formatTime(us) {
-        if (!us || us <= 0) return "0:00"
-        var s = Math.floor(us / 1000000)
+    function formatTime(s) {
+        if (!s || s <= 0) return "0:00"
+        s = Math.floor(s)
         var m = Math.floor(s / 60)
         s = s % 60
         return m + ":" + (s < 10 ? "0" : "") + s
@@ -141,6 +158,11 @@ PanelWindow {
         id: cpuUsageProc
         command: ["/bin/bash", Qt.resolvedUrl("scripts/cpu-usage.sh").toString().replace("file://", "")]
         stdout: SplitParser { splitMarker: "\n"; onRead: d => { if (d.trim()) bar.cpuUsage = d.trim() } }
+    }
+    Process {
+        id: cpuClockProc
+        command: ["/bin/bash", Qt.resolvedUrl("scripts/cpu-clock.sh").toString().replace("file://", "")]
+        stdout: SplitParser { splitMarker: "\n"; onRead: d => { if (d.trim()) bar.cpuClock = d.trim() } }
     }
     Process {
         id: cpuPowerProc
@@ -163,9 +185,19 @@ PanelWindow {
         stdout: SplitParser { splitMarker: "\n"; onRead: d => { if (d.trim()) bar.gpuUsage = d.trim() } }
     }
     Process {
+        id: gpuClockProc
+        command: ["/bin/bash", Qt.resolvedUrl("scripts/gpu-clock.sh").toString().replace("file://", "")]
+        stdout: SplitParser { splitMarker: "\n"; onRead: d => { if (d.trim()) bar.gpuClock = d.trim() } }
+    }
+    Process {
         id: gpuPowerProc
         command: ["/bin/bash", Qt.resolvedUrl("scripts/gpu-power.sh").toString().replace("file://", "")]
         stdout: SplitParser { splitMarker: "\n"; onRead: d => { if (d.trim()) bar.gpuPower = d.trim() + "W" } }
+    }
+    Process {
+        id: gpuTempProc
+        command: ["/bin/bash", Qt.resolvedUrl("scripts/gpu-temp.sh").toString().replace("file://", "")]
+        stdout: SplitParser { splitMarker: "\n"; onRead: d => { if (d.trim()) bar.gpuTemp = d.trim() } }
     }
     Process {
         id: gpuVramProc
@@ -185,36 +217,55 @@ PanelWindow {
         }
     }
 
+    // ── Active window title ───────────────────────────────────────────────────
+    Process {
+        id: winTitleProc
+        command: ["bash", "-c", "hyprctl activewindow -j | jq -r '.title // empty'"]
+        running: true
+        stdout: SplitParser {
+            splitMarker: "\n"
+            onRead: d => { bar.windowTitle = d.trim() }
+        }
+    }
+
     Timer {
         interval: 2000; running: true; repeat: true
         onTriggered: {
             if (!cpuUsageProc.running) cpuUsageProc.running = true
+            if (!cpuClockProc.running) cpuClockProc.running = true
             if (!cpuPowerProc.running) cpuPowerProc.running = true
             if (!cpuTempProc.running)  cpuTempProc.running  = true
             if (!ramProc.running)      ramProc.running      = true
             if (!gpuUsageProc.running) gpuUsageProc.running = true
+            if (!gpuClockProc.running) gpuClockProc.running = true
             if (!gpuPowerProc.running) gpuPowerProc.running = true
+            if (!gpuTempProc.running)  gpuTempProc.running  = true
             if (!gpuVramProc.running)  gpuVramProc.running  = true
             if (!netProc.running)      netProc.running      = true
+            if (!winTitleProc.running) winTitleProc.running = true
         }
     }
 
     Component.onCompleted: {
         cpuUsageProc.running = true
+        cpuClockProc.running = true
         cpuPowerProc.running = true
         cpuTempProc.running  = true
         ramProc.running      = true
         gpuUsageProc.running = true
+        gpuClockProc.running = true
         gpuPowerProc.running = true
+        gpuTempProc.running  = true
         gpuVramProc.running  = true
         netProc.running      = true
+        winTitleProc.running = true
     }
 
     // ── Layout ───────────────────────────────────────────────────────────────
     Item {
         anchors.fill: parent
 
-        // ── Left island: Workspaces + Search ────────────────────────────────
+        // ── Left island: Workspaces + Buttons ───────────────────────────────
         Rectangle {
             id: leftIsland
             anchors { left: parent.left; verticalCenter: parent.verticalCenter }
@@ -223,20 +274,12 @@ PanelWindow {
             color: bar.clrBase
             border { color: Qt.rgba(0.706, 0.745, 0.996, 0.55); width: 2 }
             clip: true
+            width: leftRow.implicitWidth + 16
 
-            width: bar.searchOpen ? 420 : leftRow.implicitWidth + 16
-            Behavior on width {
-                NumberAnimation { duration: 280; easing.type: Easing.OutCubic }
-            }
-
-            // ── Normal: workspace buttons + icons ────────────────────────────
             RowLayout {
                 id: leftRow
                 anchors.centerIn: parent
                 spacing: 4
-                opacity: bar.searchOpen ? 0 : 1
-                enabled: !bar.searchOpen
-                Behavior on opacity { NumberAnimation { duration: 180 } }
 
                 Repeater {
                     model: {
@@ -248,24 +291,20 @@ PanelWindow {
                         ws.sort(function(a, b) { return a.id - b.id })
                         return ws
                     }
-
                     delegate: Rectangle {
                         required property var modelData
                         property bool isActive: Hyprland.focusedMonitor &&
                             Hyprland.focusedMonitor.activeWorkspace &&
                             Hyprland.focusedMonitor.activeWorkspace.id === modelData.id
-
                         width: 28; height: 28
                         radius: 6
                         color: isActive ? bar.clrLavender : bar.clrSurface0
-
                         Text {
                             anchors.centerIn: parent
                             text:  modelData.id
                             color: parent.isActive ? bar.clrBase : bar.clrSubtext0
                             font  { family: "JetBrainsMono Nerd Font"; pixelSize: 13; bold: parent.isActive }
                         }
-
                         MouseArea {
                             anchors.fill: parent
                             onClicked: Hyprland.dispatch("workspace " + modelData.id)
@@ -281,70 +320,42 @@ PanelWindow {
                     onClicked: bar.panelToggled()
                 }
 
-                // Search open button
+                // Rofi launcher button
                 BarButton {
                     icon:      "󰍉"
                     iconColor: bar.clrLavender
-                    onClicked: bar.searchOpenRequested()
+                    onClicked: bar.launchRofi()
                 }
             }
+        }
 
-            // ── Search: icon + text input + clear ────────────────────────────
+        // ── Window title island ───────────────────────────────────────────────
+        Rectangle {
+            id: windowIsland
+            anchors { left: leftIsland.right; leftMargin: 8; verticalCenter: parent.verticalCenter }
+            height:  parent.height - 4
+            radius:  12
+            color:   bar.clrBase
+            border   { color: Qt.rgba(0.706, 0.745, 0.996, 0.55); width: 2 }
+            visible: bar.windowTitle.length > 0
+            implicitWidth: Math.min(winRow.implicitWidth + 20, 280)
+            clip: true
+
             RowLayout {
-                anchors {
-                    left: parent.left; right: parent.right
-                    verticalCenter: parent.verticalCenter
-                    leftMargin: 12; rightMargin: 10
-                }
-                spacing: 8
-                opacity: bar.searchOpen ? 1 : 0
-                enabled: bar.searchOpen
-                Behavior on opacity { NumberAnimation { duration: 180 } }
-
+                id: winRow
+                anchors.centerIn: parent
+                spacing: 6
                 Text {
-                    text:  "󰍉"
-                    color: bar.clrLavender
-                    font  { family: "JetBrainsMono Nerd Font"; pixelSize: 15 }
+                    text:  "󰖯"
+                    color: bar.clrBlue
+                    font   { family: "JetBrainsMono Nerd Font"; pixelSize: 13 }
                 }
-
-                TextInput {
-                    id: searchInput
-                    Layout.fillWidth: true
-                    color:       bar.clrText
-                    font         { family: "JetBrainsMono Nerd Font"; pixelSize: 13 }
-                    cursorVisible: activeFocus
-                    clip:          true
-
-                    // Placeholder text
-                    Text {
-                        anchors.verticalCenter: parent.verticalCenter
-                        text:    "Search apps & power…"
-                        color:   bar.clrSubtext0
-                        font     { family: "JetBrainsMono Nerd Font"; pixelSize: 13 }
-                        visible: parent.text.length === 0 && !parent.activeFocus
-                    }
-
-                    Keys.onEscapePressed: {
-                        bar.searchClosed()
-                    }
-
-                    Keys.onReturnPressed:  bar.searchEnterPressed()
-                    Keys.onEnterPressed:   bar.searchEnterPressed()
-
-                    onTextChanged: bar.searchQueryUpdated(text)
-                }
-
                 Text {
-                    text:    "󰅖"
-                    color:   bar.clrSubtext0
-                    font     { family: "JetBrainsMono Nerd Font"; pixelSize: 14 }
-                    visible: searchInput.text.length > 0
-
-                    MouseArea {
-                        anchors.fill: parent
-                        cursorShape: Qt.PointingHandCursor
-                        onClicked:   searchInput.text = ""
-                    }
+                    text:  bar.windowTitle
+                    color: bar.clrText
+                    font   { family: "JetBrainsMono Nerd Font"; pixelSize: 12 }
+                    elide: Text.ElideRight
+                    Layout.maximumWidth: 230
                 }
             }
         }
@@ -366,12 +377,13 @@ PanelWindow {
                 anchors.centerIn: parent
                 spacing: 8
 
-                // ── Icon + Title ─────────────────────────────────────────────
+                // Icon
                 Text {
                     text:  "󰝚"
                     color: bar.clrMauve
                     font   { family: "JetBrainsMono Nerd Font"; pixelSize: 13 }
                 }
+
                 // Scrolling title
                 Item {
                     id: titleClip
@@ -391,11 +403,9 @@ PanelWindow {
                             marquee.stop()
                             marqueeDelay.restart()
                         }
-
                         Component.onCompleted: marqueeDelay.restart()
                     }
 
-                    // Small delay before starting so text width is measured
                     Timer {
                         id: marqueeDelay
                         interval: 100
@@ -408,7 +418,6 @@ PanelWindow {
                     SequentialAnimation {
                         id: marquee
                         loops: Animation.Infinite
-
                         PauseAnimation   { duration: 2000 }
                         NumberAnimation  {
                             target: scrollText; property: "x"
@@ -428,7 +437,7 @@ PanelWindow {
 
                 Rectangle { width: 1; height: 20; color: bar.clrSurface1 }
 
-                // ── Controls ─────────────────────────────────────────────────
+                // Controls
                 Text {
                     text: "󰒮"
                     color: bar.clrSubtext0
@@ -466,7 +475,7 @@ PanelWindow {
 
                 Rectangle { width: 1; height: 20; color: bar.clrSurface1 }
 
-                // ── Progress ─────────────────────────────────────────────────
+                // Progress
                 Text {
                     text:  bar.formatTime(bar.trackPosition)
                     color: bar.clrSubtext0
@@ -478,13 +487,11 @@ PanelWindow {
                     implicitHeight: 4
                     Layout.alignment: Qt.AlignVCenter
 
-                    // Track
                     Rectangle {
                         anchors.fill: parent
                         radius: 2
                         color: bar.clrSurface1
                     }
-                    // Fill
                     Rectangle {
                         width: bar.trackLength > 0
                                ? parent.width * Math.min(bar.trackPosition / bar.trackLength, 1)
@@ -493,7 +500,6 @@ PanelWindow {
                         radius: 2
                         color: bar.clrLavender
                     }
-                    // Click to seek
                     MouseArea {
                         anchors { fill: parent; margins: -6 }
                         cursorShape: Qt.PointingHandCursor
@@ -531,6 +537,7 @@ PanelWindow {
                 spacing: 14
 
                 StatItem { icon: "󰻠"; value: bar.cpuUsage + "%"; iconColor: bar.clrGreen;   textColor: bar.clrText }
+                StatItem { icon: "󰓅"; value: bar.cpuClock;        iconColor: bar.clrSky;     textColor: bar.clrText }
                 StatItem { icon: "󱐋"; value: bar.cpuPower;        iconColor: bar.clrPeach;   textColor: bar.clrText }
                 StatItem { icon: "󰔏"; value: bar.cpuTemp + "°C";  iconColor: bar.clrYellow;  textColor: bar.clrText }
 
@@ -541,18 +548,65 @@ PanelWindow {
                 Rectangle { width: 1; height: 20; color: bar.clrSurface1 }
 
                 StatItem { icon: "󰢮"; value: bar.gpuUsage + "%";  iconColor: bar.clrTeal;    textColor: bar.clrText }
+                StatItem { icon: "󰓅"; value: bar.gpuClock;         iconColor: bar.clrSky;     textColor: bar.clrText }
                 StatItem { icon: "󱐋"; value: bar.gpuPower;         iconColor: bar.clrPeach;   textColor: bar.clrText }
+                StatItem { icon: "󰔏"; value: bar.gpuTemp + "°C";   iconColor: bar.clrYellow;  textColor: bar.clrText }
                 StatItem { icon: "󰆧"; value: bar.gpuVram;          iconColor: bar.clrSky;     textColor: bar.clrText }
 
                 Rectangle { width: 1; height: 20; color: bar.clrSurface1 }
 
-                StatItem { icon: "󰁆"; value: bar.netDown; iconColor: bar.clrBlue;    textColor: bar.clrText }
+                StatItem { icon: "󰁆"; value: bar.netDown; iconColor: bar.clrBlue;     textColor: bar.clrText }
                 StatItem { icon: "󰁞"; value: bar.netUp;   iconColor: bar.clrSapphire; textColor: bar.clrText }
-
             }
         }
 
-        // ── Right island: Tray + Clock + Buttons ────────────────────────────
+        // ── Visualizer island ────────────────────────────────────────────────
+        Rectangle {
+            id: vizIsland
+            anchors { right: rightIsland.left; rightMargin: 8; verticalCenter: parent.verticalCenter }
+            height:  parent.height - 4
+            radius:  12
+            color:   bar.clrBase
+            border   { color: Qt.rgba(0.706, 0.745, 0.996, bar.hasAudio ? 0.55 : 0.0); width: 2 }
+            width:   vizBars.implicitWidth + 20
+            opacity: bar.hasAudio ? 1.0 : 0.0
+
+            Behavior on opacity   { NumberAnimation { duration: 700 } }
+            Behavior on border.color { ColorAnimation  { duration: 700 } }
+
+            Row {
+                id: vizBars
+                anchors.centerIn: parent
+                spacing: 1
+
+                Repeater {
+                    model: bar.barValues.length > 0 ? Math.min(bar.barValues.length, 44) : 44
+                    delegate: Item {
+                        required property int index
+                        width:  2
+                        height: 26
+
+                        property real val: (index < bar.barValues.length)
+                                           ? bar.barValues[index] / 100.0 : 0.0
+
+                        Rectangle {
+                            anchors { bottom: parent.bottom; horizontalCenter: parent.horizontalCenter }
+                            width:  parent.width
+                            height: Math.max(2, parent.height * parent.val)
+                            radius: 1
+                            gradient: Gradient {
+                                orientation: Gradient.Vertical
+                                GradientStop { position: 0.0; color: "#e0e4ff" }
+                                GradientStop { position: 1.0; color: Qt.rgba(0.706, 0.745, 0.996, 0.4) }
+                            }
+                            Behavior on height { NumberAnimation { duration: 55; easing.type: Easing.OutQuad } }
+                        }
+                    }
+                }
+            }
+        }
+
+        // ── Right island: Tray + Clock + Power ──────────────────────────────
         Rectangle {
             id: rightIsland
             anchors { right: parent.right; verticalCenter: parent.verticalCenter }
@@ -571,14 +625,17 @@ PanelWindow {
                 RowLayout {
                     spacing: 10
                     Layout.alignment: Qt.AlignVCenter
-
                     Repeater {
                         model: SystemTray.items
                         delegate: Item {
                             required property SystemTrayItem modelData
                             width: 20; height: 20
                             Layout.alignment: Qt.AlignVCenter
-
+                            QsMenuAnchor {
+                                id: trayMenu
+                                menu: modelData.menu
+                                anchor.window: bar
+                            }
                             IconImage {
                                 anchors.fill: parent
                                 source: modelData.icon
@@ -586,7 +643,15 @@ PanelWindow {
                             MouseArea {
                                 anchors.fill: parent
                                 acceptedButtons: Qt.LeftButton | Qt.RightButton
-                                onClicked: modelData.activate()
+                                onClicked: mouse => {
+                                    if (mouse.button === Qt.RightButton || modelData.onlyMenu) {
+                                        var pos = mapToItem(bar.contentItem, 0, height)
+                                        trayMenu.anchor.rect = Qt.rect(pos.x, pos.y, width, 0)
+                                        trayMenu.open()
+                                    } else {
+                                        modelData.activate()
+                                    }
+                                }
                                 cursorShape: Qt.PointingHandCursor
                             }
                         }

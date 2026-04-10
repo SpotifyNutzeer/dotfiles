@@ -5,15 +5,13 @@ import Quickshell.Services.Mpris
 import QtQuick
 import QtQuick.Layouts
 import QtQuick.Controls
-import QtQuick.Effects
 
 PanelWindow {
     id: panel
-
     property bool panelOpen: false
     signal closeRequested()
 
-    // ── Catppuccin Mocha Lavender ────────────────────────────────────────────
+    // ── Catppuccin Mocha ──────────────────────────────────────────────────────
     readonly property color clrBase:     "#1e1e2e"
     readonly property color clrMantle:   "#181825"
     readonly property color clrSurface0: "#313244"
@@ -21,409 +19,439 @@ PanelWindow {
     readonly property color clrText:     "#cdd6f4"
     readonly property color clrSubtext0: "#a6adc8"
     readonly property color clrSubtext1: "#bac2de"
-    readonly property color clrBlue:     "#89b4fa"
     readonly property color clrLavender: "#b4befe"
-    readonly property color clrSky:      "#89dceb"
+    readonly property color clrBlue:     "#89b4fa"
     readonly property color clrGreen:    "#a6e3a1"
     readonly property color clrYellow:   "#f9e2af"
-    readonly property color clrPeach:    "#fab387"
     readonly property color clrRed:      "#f38ba8"
+    readonly property color clrPeach:    "#fab387"
+    readonly property color clrSky:      "#89dceb"
     readonly property color clrMauve:    "#cba6f7"
 
-    // ── Screen ───────────────────────────────────────────────────────────────
-    screen: {
-        for (var i = 0; i < Quickshell.screens.length; i++)
-            if (Quickshell.screens[i].name === "HDMI-A-1")
-                return Quickshell.screens[i]
-        return Quickshell.screens[0]
-    }
-
-    anchors       { top: true; left: true; bottom: true }
-    margins       { top: 8; left: 12; bottom: 8 }
-    implicitWidth: 380
-    exclusiveZone: 0
+    screen: Quickshell.screens[0]
+    anchors { top: true; left: true; bottom: true }
+    margins { top: 8; left: 12; bottom: 8 }
+    implicitWidth: 300
     color: "transparent"
     visible: panelOpen || hideTimer.running
 
-    onPanelOpenChanged: { if (!panelOpen) hideTimer.start() }
-
-    Timer {
-        id: hideTimer
-        interval: 320  // slightly longer than the 300ms slide animation
-    }
-
-    // ── Notification server ──────────────────────────────────────────────────
-    NotificationServer {
-        id: notifServer
-        keepOnReload: true
-    }
-
-    // ── Power runner ─────────────────────────────────────────────────────────
-    Process {
-        id: powerProc
-        property string pendingCmd: ""
-        command: ["/bin/bash", "-c", pendingCmd]
-    }
-
-    function runCmd(cmd) {
-        if (!powerProc.running) {
-            powerProc.pendingCmd = cmd
-            powerProc.running = true
+    onPanelOpenChanged: {
+        if (!panelOpen) {
+            hideTimer.start()
+        } else {
+            // Poll current states when opening
+            wifiProc.running  = true
+            btProc.running    = true
+            micProc.running   = true
+            volReadProc.running = true
         }
     }
 
-    // ── Active MPRIS player (prefer Tidal, then any playing, then first) ────
+    Timer { id: hideTimer; interval: 350 }
+
+    // ── Toggle states ────────────────────────────────────────────────────────
+    property bool wifiEnabled: false
+    property bool btEnabled:   false
+    property bool micMuted:    false
+    property bool dndEnabled:  false
+
+    Process {
+        id: wifiProc
+        command: ["bash", "-c", "nmcli radio wifi"]
+        stdout: SplitParser { onRead: d => panel.wifiEnabled = d.trim() === "enabled" }
+    }
+    Process {
+        id: btProc
+        command: ["bash", "-c", "bluetoothctl show | grep 'Powered:' | awk '{print $2}'"]
+        stdout: SplitParser { onRead: d => panel.btEnabled = d.trim() === "yes" }
+    }
+    Process {
+        id: micProc
+        command: ["bash", "-c", "wpctl get-volume @DEFAULT_SOURCE@"]
+        stdout: SplitParser { onRead: d => panel.micMuted = d.includes("[MUTED]") }
+    }
+
+    // ── Volume / Brightness ───────────────────────────────────────────────────
+    property real volumeVal:     0.5
+    property real brightnessVal: 1.0
+
+    Process {
+        id: volReadProc
+        command: ["bash", "-c", "wpctl get-volume @DEFAULT_AUDIO_SINK@ | awk '{print $2}'"]
+        stdout: SplitParser { onRead: d => { var v = parseFloat(d.trim()); if (!isNaN(v)) panel.volumeVal = Math.min(v, 1.0) } }
+    }
+
+    function runCmd(cmd) {
+        var p = Qt.createQmlObject("import Quickshell.Io; Process {}", panel)
+        p.command = ["/bin/bash", "-c", cmd]
+        p.running = true
+    }
+
+    // ── MPRIS ─────────────────────────────────────────────────────────────────
     property var activePlayer: {
         var list = Mpris.players.values ?? Mpris.players
         if (!list || list.length === 0) return null
-        // 1. Tidal playing
         for (var i = 0; i < list.length; i++)
             if (list[i].identity?.toLowerCase().includes("tidal") &&
                 list[i].playbackState === MprisPlaybackState.Playing) return list[i]
-        // 2. Any other source playing
         for (var i = 0; i < list.length; i++)
             if (list[i].playbackState === MprisPlaybackState.Playing) return list[i]
-        // 3. Tidal paused
         for (var i = 0; i < list.length; i++)
             if (list[i].identity?.toLowerCase().includes("tidal")) return list[i]
-        // 4. First available
-        return list[0] ?? null
+        return list.length > 0 ? list[0] : null
     }
 
-    // ── Slide-in from left ───────────────────────────────────────────────────
+    // ── Notifications ─────────────────────────────────────────────────────────
+    NotificationServer { id: notifServer }
+
+    // ── Layout ────────────────────────────────────────────────────────────────
     Item {
         anchors.fill: parent
         clip: true
 
         Rectangle {
             id: content
-            width:  parent.width
-            height: parent.height - 4
-            anchors.verticalCenter: parent.verticalCenter
+            width: parent.width
+            height: parent.height
             x: panel.panelOpen ? 0 : -parent.width
-
-            Behavior on x {
-                NumberAnimation { duration: 300; easing.type: Easing.OutCubic }
-            }
-
-            // Material You inspired: very rounded, no harsh border
-            color:  panel.clrMantle
-            radius: 28
-            border { color: Qt.rgba(0.706, 0.745, 0.996, 0.25); width: 2 }
+            Behavior on x { NumberAnimation { duration: 300; easing.type: Easing.OutCubic } }
+            color: panel.clrMantle
+            radius: 16
+            border { color: Qt.rgba(0.706, 0.745, 0.996, 0.15); width: 1 }
 
             ColumnLayout {
-                anchors { fill: parent; margins: 16 }
-                spacing: 14
+                anchors { fill: parent; margins: 14 }
+                spacing: 12
 
                 // ── Header ───────────────────────────────────────────────────
                 RowLayout {
                     Layout.fillWidth: true
-                    Layout.bottomMargin: 2
+                    spacing: 10
 
-                    Text {
-                        text:  "Quick Panel"
-                        color: panel.clrLavender
-                        font  { family: "JetBrainsMono Nerd Font"; pixelSize: 22; bold: true }
-                        Layout.fillWidth: true
-                    }
-
-                    // Close — pill button
                     Rectangle {
-                        width: 36; height: 36; radius: 18
-                        color: closeHover.containsMouse ? panel.clrSurface1 : panel.clrSurface0
-
+                        width: 34; height: 34; radius: 17
+                        color: panel.clrSurface0
                         Text {
                             anchors.centerIn: parent
-                            text:  "󰅖"
-                            color: panel.clrSubtext0
-                            font  { family: "JetBrainsMono Nerd Font"; pixelSize: 15 }
+                            text: "󰄛"; color: panel.clrLavender
+                            font { pixelSize: 16; family: "JetBrainsMono Nerd Font" }
                         }
-
+                    }
+                    Text {
+                        text: "Control Center"
+                        color: panel.clrText
+                        font { pixelSize: 14; bold: true; family: "JetBrainsMono Nerd Font" }
+                        Layout.fillWidth: true
+                    }
+                    Rectangle {
+                        width: 28; height: 28; radius: 14
+                        color: panel.clrSurface0
+                        Text {
+                            anchors.centerIn: parent
+                            text: "󰅖"; color: panel.clrSubtext0
+                            font { pixelSize: 12; family: "JetBrainsMono Nerd Font" }
+                        }
                         MouseArea {
-                            id: closeHover
                             anchors.fill: parent
-                            hoverEnabled: true
                             cursorShape: Qt.PointingHandCursor
                             onClicked: panel.closeRequested()
                         }
                     }
                 }
 
-                // ── Now Playing card ─────────────────────────────────────────
-                Rectangle {
-                    id: nowPlayingCard
-                    Layout.fillWidth: true
-                    implicitHeight: nowPlayingCol.implicitHeight + 28
-                    radius: 20
-                    color: panel.clrSurface0
-                    clip: true
-                    visible: panel.activePlayer !== null
-
-                    // Blurred album art background
-                    Image {
-                        id: albumArtBg
-                        anchors.fill: parent
-                        source: (panel.activePlayer && panel.activePlayer.trackArtUrl)
-                                ? panel.activePlayer.trackArtUrl : ""
-                        fillMode: Image.PreserveAspectCrop
-                        visible: false  // used as blur source only
-                        asynchronous: true
-                    }
-
-                    MultiEffect {
-                        source: albumArtBg
-                        anchors.fill: albumArtBg
-                        blurEnabled:  true
-                        blur:         1.0
-                        blurMax:      64
-                        visible:      albumArtBg.source !== "" && albumArtBg.status === Image.Ready
-                    }
-
-                    // Dark overlay so text stays readable
-                    Rectangle {
-                        anchors.fill: parent
-                        color: Qt.rgba(0.094, 0.094, 0.141, 0.78)
-                        visible: albumArtBg.source !== "" && albumArtBg.status === Image.Ready
-                    }
-
-                    // Lavender accent strip on the left
-                    Rectangle {
-                        width: 4; height: parent.height - 16
-                        anchors { left: parent.left; leftMargin: 0; verticalCenter: parent.verticalCenter }
-                        radius: 2
-                        color: panel.clrLavender
-                    }
-
-                    ColumnLayout {
-                        id: nowPlayingCol
-                        anchors {
-                            left: parent.left; right: parent.right
-                            verticalCenter: parent.verticalCenter
-                            leftMargin: 16; rightMargin: 14
-                        }
-                        spacing: 4
-
-                        Text {
-                            text:  "NOW PLAYING"
-                            color: panel.clrLavender
-                            font  { family: "JetBrainsMono Nerd Font"; pixelSize: 10; bold: true; letterSpacing: 1.5 }
-                        }
-
-                        Text {
-                            text:  panel.activePlayer ? (panel.activePlayer.trackTitle || "—") : "—"
-                            color: panel.clrText
-                            font  { family: "JetBrainsMono Nerd Font"; pixelSize: 15; bold: true }
-                            elide: Text.ElideRight
-                            Layout.fillWidth: true
-                        }
-
-                        Text {
-                            text:  panel.activePlayer ? (panel.activePlayer.trackArtist || "") : ""
-                            color: panel.clrSubtext0
-                            font  { family: "JetBrainsMono Nerd Font"; pixelSize: 12 }
-                            elide: Text.ElideRight
-                            Layout.fillWidth: true
-                            visible: text !== ""
-                        }
-
-                        // Controls
-                        RowLayout {
-                            spacing: 10
-                            Layout.topMargin: 6
-                            Layout.alignment: Qt.AlignHCenter
-
-                            // Previous — tonal
-                            Rectangle {
-                                width: 40; height: 40; radius: 20
-                                color: prevHover.containsMouse ? panel.clrSurface1 : "transparent"
-
-                                Text {
-                                    anchors.centerIn: parent
-                                    text:  "󰒮"
-                                    color: panel.clrText
-                                    font  { family: "JetBrainsMono Nerd Font"; pixelSize: 18 }
-                                }
-                                MouseArea {
-                                    id: prevHover
-                                    anchors.fill: parent; hoverEnabled: true
-                                    cursorShape: Qt.PointingHandCursor
-                                    onClicked: { if (panel.activePlayer) panel.activePlayer.previous() }
-                                }
-                            }
-
-                            // Play / Pause — filled primary button
-                            Rectangle {
-                                width: 52; height: 52; radius: 26
-                                color: playHover.containsMouse
-                                       ? Qt.lighter(panel.clrLavender, 1.15)
-                                       : panel.clrLavender
-
-                                Text {
-                                    anchors.centerIn: parent
-                                    text: {
-                                        if (!panel.activePlayer) return "󰐊"
-                                        return panel.activePlayer.playbackState === MprisPlaybackState.Playing
-                                               ? "󰏤" : "󰐊"
-                                    }
-                                    color: panel.clrMantle
-                                    font  { family: "JetBrainsMono Nerd Font"; pixelSize: 22 }
-                                }
-                                MouseArea {
-                                    id: playHover
-                                    anchors.fill: parent; hoverEnabled: true
-                                    cursorShape: Qt.PointingHandCursor
-                                    onClicked: {
-                                        if (!panel.activePlayer) return
-                                        if (panel.activePlayer.playbackState === MprisPlaybackState.Playing)
-                                            panel.activePlayer.pause()
-                                        else
-                                            panel.activePlayer.play()
-                                    }
-                                }
-                            }
-
-                            // Next — tonal
-                            Rectangle {
-                                width: 40; height: 40; radius: 20
-                                color: nextHover.containsMouse ? panel.clrSurface1 : "transparent"
-
-                                Text {
-                                    anchors.centerIn: parent
-                                    text:  "󰒭"
-                                    color: panel.clrText
-                                    font  { family: "JetBrainsMono Nerd Font"; pixelSize: 18 }
-                                }
-                                MouseArea {
-                                    id: nextHover
-                                    anchors.fill: parent; hoverEnabled: true
-                                    cursorShape: Qt.PointingHandCursor
-                                    onClicked: { if (panel.activePlayer) panel.activePlayer.next() }
-                                }
-                            }
-                        }
-                    }
-                }
-
-                // ── Notifications ────────────────────────────────────────────
+                // ── Quick Toggles ─────────────────────────────────────────────
                 RowLayout {
                     Layout.fillWidth: true
+                    spacing: 8
 
-                    Text {
-                        text:  "Notifications"
-                        color: panel.clrSubtext1
-                        font  { family: "JetBrainsMono Nerd Font"; pixelSize: 13; bold: true }
-                        Layout.fillWidth: true
-                    }
-
-                    Text {
-                        text:  "Clear all"
-                        color: panel.clrLavender
-                        font  { family: "JetBrainsMono Nerd Font"; pixelSize: 11 }
-                        visible: notifServer.trackedNotifications.length > 0
-
-                        MouseArea {
-                            anchors.fill: parent
-                            cursorShape: Qt.PointingHandCursor
-                            onClicked: {
-                                var list = notifServer.trackedNotifications
-                                for (var i = list.length - 1; i >= 0; i--)
-                                    list[i].close()
+                    Repeater {
+                        model: [
+                            { icon: "󰤨", label: "WiFi",      active: panel.wifiEnabled },
+                            { icon: "󰂱", label: "Bluetooth", active: panel.btEnabled   },
+                            { icon: "󰍬", label: "Mic",       active: !panel.micMuted   },
+                            { icon: "󰂚", label: "DND",       active: panel.dndEnabled  }
+                        ]
+                        delegate: Rectangle {
+                            Layout.fillWidth: true
+                            height: 52
+                            radius: 12
+                            color: modelData.active
+                                   ? Qt.rgba(0.706, 0.745, 0.996, 0.2)
+                                   : panel.clrSurface0
+                            border {
+                                color: modelData.active ? panel.clrLavender : "transparent"
+                                width: 1
                             }
-                        }
-                    }
-                }
 
-                Flickable {
-                    Layout.fillWidth:  true
-                    Layout.fillHeight: true
-                    clip: true
-                    contentWidth:  width
-                    contentHeight: notifColumn.height
-                    ScrollBar.vertical: ScrollBar { policy: ScrollBar.AsNeeded }
+                            ColumnLayout {
+                                anchors.centerIn: parent
+                                spacing: 3
+                                Text {
+                                    Layout.alignment: Qt.AlignHCenter
+                                    text: modelData.icon
+                                    color: modelData.active ? panel.clrLavender : panel.clrSubtext0
+                                    font { pixelSize: 16; family: "JetBrainsMono Nerd Font" }
+                                }
+                                Text {
+                                    Layout.alignment: Qt.AlignHCenter
+                                    text: modelData.label
+                                    color: modelData.active ? panel.clrLavender : panel.clrSubtext0
+                                    font { pixelSize: 9; family: "JetBrainsMono Nerd Font" }
+                                }
+                            }
 
-                    Column {
-                        id: notifColumn
-                        width:   parent.width
-                        spacing: 8
-
-                        Repeater {
-                            model: notifServer.trackedNotifications
-
-                            delegate: Rectangle {
-                                required property var modelData
-                                width:  notifColumn.width
-                                height: notifInner.implicitHeight + 24
-                                radius: 16
-                                color:  panel.clrSurface0
-
-                                ColumnLayout {
-                                    id: notifInner
-                                    anchors {
-                                        left: parent.left; right: parent.right
-                                        verticalCenter: parent.verticalCenter
-                                        leftMargin: 14; rightMargin: 14
-                                    }
-                                    spacing: 3
-
-                                    Row {
-                                        width: parent.width
-                                        spacing: 4
-
-                                        Text {
-                                            width: parent.width - dismissBtn.width - parent.spacing
-                                            text:  (modelData.appName || "") !== ""
-                                                   ? modelData.appName.toUpperCase() : "APP"
-                                            color: panel.clrLavender
-                                            font  { family: "JetBrainsMono Nerd Font"; pixelSize: 9; bold: true; letterSpacing: 1.2 }
-                                        }
-
-                                        Text {
-                                            id: dismissBtn
-                                            text:  "󰅖"
-                                            color: panel.clrSubtext0
-                                            font  { family: "JetBrainsMono Nerd Font"; pixelSize: 12 }
-
-                                            MouseArea {
-                                                anchors.fill: parent
-                                                cursorShape:  Qt.PointingHandCursor
-                                                onClicked:    modelData.close()
-                                            }
-                                        }
-                                    }
-
-                                    Text {
-                                        width: parent.width
-                                        text:  modelData.summary || "Notification"
-                                        color: panel.clrText
-                                        font  { family: "JetBrainsMono Nerd Font"; pixelSize: 13; bold: true }
-                                        elide: Text.ElideRight
-                                    }
-
-                                    Text {
-                                        width:    parent.width
-                                        text:     modelData.body || ""
-                                        color:    panel.clrSubtext0
-                                        font      { family: "JetBrainsMono Nerd Font"; pixelSize: 11 }
-                                        wrapMode: Text.WordWrap
-                                        visible:  text !== ""
+                            MouseArea {
+                                anchors.fill: parent
+                                cursorShape: Qt.PointingHandCursor
+                                onClicked: {
+                                    if (index === 0) {
+                                        panel.runCmd("nmcli radio wifi " + (panel.wifiEnabled ? "off" : "on"))
+                                        panel.wifiEnabled = !panel.wifiEnabled
+                                    } else if (index === 1) {
+                                        panel.runCmd("bluetoothctl power " + (panel.btEnabled ? "off" : "on"))
+                                        panel.btEnabled = !panel.btEnabled
+                                    } else if (index === 2) {
+                                        panel.runCmd("wpctl set-mute @DEFAULT_SOURCE@ toggle")
+                                        panel.micMuted = !panel.micMuted
+                                    } else if (index === 3) {
+                                        panel.runCmd("pkill -USR1 dunst")
+                                        panel.dndEnabled = !panel.dndEnabled
                                     }
                                 }
                             }
                         }
+                    }
+                }
 
-                        Text {
-                            width:              notifColumn.width
-                            horizontalAlignment: Text.AlignHCenter
-                            topPadding:         12
-                            text:    "No notifications"
-                            color:   panel.clrSubtext0
-                            font     { family: "JetBrainsMono Nerd Font"; pixelSize: 12 }
-                            visible: notifServer.trackedNotifications.length === 0
+                // ── Volume slider ─────────────────────────────────────────────
+                RowLayout {
+                    Layout.fillWidth: true
+                    spacing: 10
+
+                    Text {
+                        text: "󰕾"; color: panel.clrBlue
+                        font { pixelSize: 14; family: "JetBrainsMono Nerd Font" }
+                    }
+                    Item {
+                        Layout.fillWidth: true
+                        height: 20
+
+                        Rectangle {
+                            anchors { verticalCenter: parent.verticalCenter; left: parent.left; right: parent.right }
+                            height: 6; radius: 3
+                            color: panel.clrSurface0
+                            Rectangle {
+                                width: parent.width * panel.volumeVal
+                                height: parent.height; radius: parent.radius
+                                color: panel.clrBlue
+                            }
+                        }
+                        // Thumb
+                        Rectangle {
+                            x: panel.volumeVal * (parent.width - width)
+                            anchors.verticalCenter: parent.verticalCenter
+                            width: 14; height: 14; radius: 7
+                            color: panel.clrText
+                        }
+                        MouseArea {
+                            anchors.fill: parent
+                            onPressed:         { var v = Math.max(0, Math.min(mouseX / width, 1)); panel.volumeVal = v; panel.runCmd("wpctl set-volume @DEFAULT_AUDIO_SINK@ " + v.toFixed(2)) }
+                            onPositionChanged: { var v = Math.max(0, Math.min(mouseX / width, 1)); panel.volumeVal = v; panel.runCmd("wpctl set-volume @DEFAULT_AUDIO_SINK@ " + v.toFixed(2)) }
+                            cursorShape: Qt.PointingHandCursor
+                        }
+                    }
+                    Text {
+                        text: Math.round(panel.volumeVal * 100) + "%"
+                        color: panel.clrSubtext0
+                        font { pixelSize: 10; family: "JetBrainsMono Nerd Font" }
+                        Layout.minimumWidth: 30
+                    }
+                }
+
+                // ── Brightness slider ─────────────────────────────────────────
+                RowLayout {
+                    Layout.fillWidth: true
+                    spacing: 10
+
+                    Text {
+                        text: "󰃟"; color: panel.clrYellow
+                        font { pixelSize: 14; family: "JetBrainsMono Nerd Font" }
+                    }
+                    Item {
+                        Layout.fillWidth: true
+                        height: 20
+
+                        Rectangle {
+                            anchors { verticalCenter: parent.verticalCenter; left: parent.left; right: parent.right }
+                            height: 6; radius: 3
+                            color: panel.clrSurface0
+                            Rectangle {
+                                width: parent.width * panel.brightnessVal
+                                height: parent.height; radius: parent.radius
+                                color: panel.clrYellow
+                            }
+                        }
+                        Rectangle {
+                            x: panel.brightnessVal * (parent.width - width)
+                            anchors.verticalCenter: parent.verticalCenter
+                            width: 14; height: 14; radius: 7
+                            color: panel.clrText
+                        }
+                        MouseArea {
+                            anchors.fill: parent
+                            onPressed:         { var v = Math.max(0, Math.min(mouseX / width, 1)); panel.brightnessVal = v; panel.runCmd("brightnessctl set " + Math.round(v * 100) + "%") }
+                            onPositionChanged: { var v = Math.max(0, Math.min(mouseX / width, 1)); panel.brightnessVal = v; panel.runCmd("brightnessctl set " + Math.round(v * 100) + "%") }
+                            cursorShape: Qt.PointingHandCursor
+                        }
+                    }
+                    Text {
+                        text: Math.round(panel.brightnessVal * 100) + "%"
+                        color: panel.clrSubtext0
+                        font { pixelSize: 10; family: "JetBrainsMono Nerd Font" }
+                        Layout.minimumWidth: 30
+                    }
+                }
+
+                // ── Media card ────────────────────────────────────────────────
+                Rectangle {
+                    Layout.fillWidth: true
+                    height: 70
+                    radius: 12
+                    color: panel.clrSurface0
+                    visible: panel.activePlayer !== null
+
+                    RowLayout {
+                        anchors { fill: parent; margins: 10 }
+                        spacing: 10
+
+                        // Album art
+                        Rectangle {
+                            width: 50; height: 50; radius: 8
+                            color: panel.clrSurface1; clip: true
+                            Image {
+                                anchors.fill: parent
+                                source: panel.activePlayer ? panel.activePlayer.trackArtUrl : ""
+                                fillMode: Image.PreserveAspectCrop
+                            }
+                            // Fallback icon
+                            Text {
+                                anchors.centerIn: parent
+                                text: "󰝚"; color: panel.clrMauve
+                                font { pixelSize: 18; family: "JetBrainsMono Nerd Font" }
+                                visible: !panel.activePlayer || !panel.activePlayer.trackArtUrl
+                            }
+                        }
+
+                        ColumnLayout {
+                            Layout.fillWidth: true
+                            spacing: 2
+
+                            Text {
+                                text: panel.activePlayer ? (panel.activePlayer.trackTitle || "") : ""
+                                color: panel.clrText
+                                font { pixelSize: 11; bold: true; family: "JetBrainsMono Nerd Font" }
+                                elide: Text.ElideRight
+                                Layout.fillWidth: true
+                            }
+                            Text {
+                                text: panel.activePlayer ? (panel.activePlayer.trackArtist || "") : ""
+                                color: panel.clrSubtext0
+                                font { pixelSize: 10; family: "JetBrainsMono Nerd Font" }
+                                elide: Text.ElideRight
+                                Layout.fillWidth: true
+                            }
+
+                            RowLayout {
+                                spacing: 14
+                                Text {
+                                    text: "󰒮"; color: panel.clrSubtext1
+                                    font { pixelSize: 14; family: "JetBrainsMono Nerd Font" }
+                                    MouseArea { anchors.fill: parent; cursorShape: Qt.PointingHandCursor; onClicked: { if (panel.activePlayer) panel.activePlayer.previous() } }
+                                }
+                                Text {
+                                    text: (panel.activePlayer && panel.activePlayer.playbackState === MprisPlaybackState.Playing) ? "󰏥" : "󰐊"
+                                    color: panel.clrLavender
+                                    font { pixelSize: 16; family: "JetBrainsMono Nerd Font" }
+                                    MouseArea {
+                                        anchors.fill: parent; cursorShape: Qt.PointingHandCursor
+                                        onClicked: {
+                                            if (!panel.activePlayer) return
+                                            if (panel.activePlayer.playbackState === MprisPlaybackState.Playing)
+                                                panel.activePlayer.pause()
+                                            else
+                                                panel.activePlayer.play()
+                                        }
+                                    }
+                                }
+                                Text {
+                                    text: "󰒭"; color: panel.clrSubtext1
+                                    font { pixelSize: 14; family: "JetBrainsMono Nerd Font" }
+                                    MouseArea { anchors.fill: parent; cursorShape: Qt.PointingHandCursor; onClicked: { if (panel.activePlayer) panel.activePlayer.next() } }
+                                }
+                            }
                         }
                     }
                 }
 
-                // ── Power row ────────────────────────────────────────────────
+                // ── Notifications ─────────────────────────────────────────────
+                Text {
+                    text: "Notifications"
+                    color: panel.clrSubtext0
+                    font { pixelSize: 10; family: "JetBrainsMono Nerd Font" }
+                    visible: notifServer.trackedNotifications.length > 0
+                }
+
+                ListView {
+                    id: nv
+                    Layout.fillWidth: true
+                    Layout.fillHeight: true
+                    model: notifServer.trackedNotifications
+                    spacing: 6
+                    clip: true
+
+                    delegate: Rectangle {
+                        width: nv.width
+                        height: notifCol.implicitHeight + 16
+                        radius: 10
+                        color: panel.clrSurface0
+
+                        RowLayout {
+                            anchors { fill: parent; margins: 10 }
+                            spacing: 8
+
+                            ColumnLayout {
+                                id: notifCol
+                                Layout.fillWidth: true
+                                spacing: 2
+                                Text {
+                                    text: modelData.summary
+                                    color: panel.clrText
+                                    font { pixelSize: 11; bold: true; family: "JetBrainsMono Nerd Font" }
+                                    elide: Text.ElideRight
+                                    Layout.fillWidth: true
+                                }
+                                Text {
+                                    text: modelData.body
+                                    color: panel.clrSubtext0
+                                    font { pixelSize: 10; family: "JetBrainsMono Nerd Font" }
+                                    elide: Text.ElideRight
+                                    Layout.fillWidth: true
+                                    visible: modelData.body !== ""
+                                }
+                            }
+                            Text {
+                                text: "󰅖"; color: panel.clrSubtext1
+                                font { pixelSize: 14; family: "JetBrainsMono Nerd Font" }
+                                MouseArea {
+                                    anchors.fill: parent; cursorShape: Qt.PointingHandCursor
+                                    onClicked: modelData.close()
+                                }
+                            }
+                        }
+                    }
+                }
+
+                // ── Bottom actions ────────────────────────────────────────────
                 Rectangle {
                     Layout.fillWidth: true
                     height: 1
@@ -434,51 +462,42 @@ PanelWindow {
                     Layout.fillWidth: true
                     Layout.alignment: Qt.AlignHCenter
                     spacing: 12
-                    Layout.bottomMargin: 2
-
-                    property var actions: [
-                        { icon: "󰍁", color: clrBlue,   cmd: "loginctl lock-session"  },
-                        { icon: "󰒲", color: clrSky,    cmd: "systemctl suspend"       },
-                        { icon: "󰍃", color: clrYellow, cmd: "hyprctl dispatch exit"   },
-                        { icon: "󰜉", color: clrPeach,  cmd: "systemctl reboot"        },
-                        { icon: "󰐥", color: clrRed,    cmd: "systemctl poweroff"      }
-                    ]
-
-                    Item { Layout.fillWidth: true }
 
                     Repeater {
-                        model: parent.actions
-
+                        model: [
+                            { icon: "󰍁", label: "Lock",    cmd: "loginctl lock-session", color: panel.clrBlue  },
+                            { icon: "󰜉", label: "Reboot",  cmd: "systemctl reboot",       color: panel.clrPeach },
+                            { icon: "󰐥", label: "Shutdown",cmd: "systemctl poweroff",     color: panel.clrRed   }
+                        ]
                         delegate: Rectangle {
-                            required property var modelData
-                            property bool hovered: false
+                            Layout.fillWidth: true
+                            height: 44
+                            radius: 10
+                            color: panel.clrSurface0
 
-                            width: 44; height: 44
-                            radius: 22
-
-                            color: hovered
-                                   ? Qt.rgba(modelData.color.r, modelData.color.g, modelData.color.b, 0.28)
-                                   : Qt.rgba(modelData.color.r, modelData.color.g, modelData.color.b, 0.14)
-
-                            Text {
+                            ColumnLayout {
                                 anchors.centerIn: parent
-                                text:  modelData.icon
-                                color: modelData.color
-                                font  { family: "JetBrainsMono Nerd Font"; pixelSize: 18 }
+                                spacing: 2
+                                Text {
+                                    Layout.alignment: Qt.AlignHCenter
+                                    text: modelData.icon
+                                    color: modelData.color
+                                    font { pixelSize: 16; family: "JetBrainsMono Nerd Font" }
+                                }
+                                Text {
+                                    Layout.alignment: Qt.AlignHCenter
+                                    text: modelData.label
+                                    color: panel.clrSubtext0
+                                    font { pixelSize: 9; family: "JetBrainsMono Nerd Font" }
+                                }
                             }
 
                             MouseArea {
-                                anchors.fill: parent
-                                hoverEnabled: true
-                                cursorShape: Qt.PointingHandCursor
-                                onEntered: parent.hovered = true
-                                onExited:  parent.hovered = false
+                                anchors.fill: parent; cursorShape: Qt.PointingHandCursor
                                 onClicked: panel.runCmd(modelData.cmd)
                             }
                         }
                     }
-
-                    Item { Layout.fillWidth: true }
                 }
             }
         }

@@ -1,0 +1,12 @@
+configuration {
+    modi:           "drun,run";
+    show-icons:     true;
+    icon-theme:     "Papirus-Dark";
+    drun-display-format: "{name}";
+    display-drun:   "";
+    display-run:    "";
+    terminal:       "kitty";
+    font:           "JetBrainsMono Nerd Font 13";
+}
+
+@theme "~/.config/rofi/catppuccin-mocha.rasi"

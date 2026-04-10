@@ -2,6 +2,8 @@ import QtQuick
 import QtQuick.Layouts
 
 Item {
+    id: searchItem
+
     property string itemIcon:     ""
     property string itemIconPath: ""
     property color  itemColor:    "#cdd6f4"
@@ -9,46 +11,70 @@ Item {
 
     signal activated()
 
-    implicitHeight: 36
+    implicitHeight: 48
 
     Rectangle {
         anchors.fill: parent
-        radius: 8
-        color: ma.containsMouse ? "#313244" : "transparent"
+        radius: 12
+        color: ma.containsMouse ? Qt.rgba(180, 190, 254, 0.15) : "transparent"
+        
+        Behavior on color { ColorAnimation { duration: 150 } }
+
+        // Subtle border on hover
+        border {
+            color: ma.containsMouse ? Qt.rgba(180, 190, 254, 0.3) : "transparent"
+            width: 1
+        }
     }
 
     RowLayout {
         anchors {
-            left: parent.left; right: parent.right
-            verticalCenter: parent.verticalCenter
-            leftMargin: 10; rightMargin: 10
+            fill: parent
+            leftMargin: 12; rightMargin: 12
         }
-        spacing: 10
+        spacing: 12
 
-        // Real icon image (if path resolved)
-        Image {
-            visible: itemIconPath !== ""
-            source:  itemIconPath !== "" ? "file://" + itemIconPath : ""
-            width:  20; height: 20
-            sourceSize: Qt.size(20, 20)
-            fillMode: Image.PreserveAspectFit
-            smooth: true
-        }
+        // App Icon
+        Rectangle {
+            width: 32; height: 32; radius: 8
+            color: Qt.rgba(24, 24, 37, 0.5)
+            clip: true
+            
+            Image {
+                visible: itemIconPath !== ""
+                anchors.centerIn: parent
+                source:  itemIconPath !== "" ? "file://" + itemIconPath : ""
+                width:  24; height: 24
+                sourceSize: Qt.size(24, 24)
+                fillMode: Image.PreserveAspectFit
+                smooth: true
+            }
 
-        // Nerd Font fallback (shown when no image path)
-        Text {
-            visible: itemIconPath === ""
-            text:    itemIcon
-            color:   itemColor
-            font     { family: "JetBrainsMono Nerd Font"; pixelSize: 14 }
+            Text {
+                visible: itemIconPath === ""
+                anchors.centerIn: parent
+                text: "󰀻"
+                color: itemColor
+                font { family: "JetBrainsMono Nerd Font"; pixelSize: 18 }
+            }
         }
 
         Text {
             text:  itemLabel
-            color: "#cdd6f4"
-            font   { family: "JetBrainsMono Nerd Font"; pixelSize: 13 }
+            color: ma.containsMouse ? "#ffffff" : "#cdd6f4"
+            font { family: "JetBrainsMono Nerd Font"; pixelSize: 14; bold: ma.containsMouse }
             elide: Text.ElideRight
             Layout.fillWidth: true
+            
+            Behavior on color { ColorAnimation { duration: 150 } }
+        }
+
+        // Indicator for "Enter to launch"
+        Text {
+            visible: ma.containsMouse
+            text: "󰌑"
+            color: Qt.rgba(180, 190, 254, 0.5)
+            font { family: "JetBrainsMono Nerd Font"; pixelSize: 12 }
         }
     }
 

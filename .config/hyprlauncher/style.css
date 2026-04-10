@@ -1,0 +1,83 @@
+/* Catppuccin Mocha */
+@define-color base     #1e1e2e;
+@define-color mantle   #181825;
+@define-color crust    #11111b;
+@define-color surface0 #313244;
+@define-color surface1 #45475a;
+@define-color surface2 #585b70;
+@define-color overlay0 #6c7086;
+@define-color text     #cdd6f4;
+@define-color subtext0 #a6adc8;
+@define-color blue     #89b4fa;
+@define-color mauve    #cba6f7;
+@define-color green    #a6e3a1;
+@define-color peach    #fab387;
+@define-color red      #f38ba8;
+@define-color pink     #f5c2e7;
+
+* {
+    font-family: "JetBrainsMono Nerd Font", monospace;
+    font-size: 14px;
+    color: @text;
+}
+
+window {
+    background-color: alpha(@base, 0.92);
+    border: 1px solid alpha(@surface1, 0.8);
+    border-radius: 14px;
+}
+
+/* Search bar */
+entry {
+    background-color: @surface0;
+    border: 1px solid @surface1;
+    border-radius: 10px;
+    padding: 10px 14px;
+    margin: 10px;
+    color: @text;
+    caret-color: @blue;
+}
+
+entry:focus {
+    border-color: @blue;
+    box-shadow: 0 0 0 2px alpha(@blue, 0.2);
+}
+
+/* App list */
+listview {
+    background-color: transparent;
+    padding: 0 8px 8px 8px;
+}
+
+row {
+    background-color: transparent;
+    border-radius: 8px;
+    padding: 6px 8px;
+    margin: 2px 0;
+    transition: background-color 0.15s ease;
+}
+
+row:hover {
+    background-color: @surface0;
+}
+
+row:selected {
+    background-color: alpha(@blue, 0.2);
+    border: 1px solid alpha(@blue, 0.4);
+}
+
+row:selected label {
+    color: @blue;
+}
+
+/* App name */
+.app-name {
+    font-weight: bold;
+    color: @text;
+}
+
+/* App description */
+.app-description {
+    color: @subtext0;
+    font-size: 12px;
+}

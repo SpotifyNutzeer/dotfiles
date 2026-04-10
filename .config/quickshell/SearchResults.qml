@@ -2,189 +2,150 @@ import Quickshell
 import Quickshell.Io
 import QtQuick
 import QtQuick.Layouts
+import QtQuick.Controls
 
 PanelWindow {
     id: results
-
-    property bool   searchOpen:  false
+    property bool searchOpen: false
     property string searchQuery: ""
-
     signal launchCalled()
 
-    // ── Catppuccin Mocha ─────────────────────────────────────────────────────
-    readonly property color clrMantle:   "#181825"
-    readonly property color clrSurface0: "#313244"
-    readonly property color clrSurface1: "#45475a"
-    readonly property color clrText:     "#cdd6f4"
-    readonly property color clrLavender: "#b4befe"
-    readonly property color clrBlue:     "#89b4fa"
-    readonly property color clrSky:      "#89dceb"
-    readonly property color clrYellow:   "#f9e2af"
-    readonly property color clrPeach:    "#fab387"
-    readonly property color clrRed:      "#f38ba8"
+    screen: Quickshell.screens[0]
+    anchors {
+        top: true
+        left: true
+        right: true
+        bottom: true
+    }
+    exclusiveZone: -1
+    color: "transparent"
+    visible: searchOpen
 
-    screen: {
-        for (var i = 0; i < Quickshell.screens.length; i++)
-            if (Quickshell.screens[i].name === "HDMI-A-1")
-                return Quickshell.screens[i]
-        return Quickshell.screens[0]
+    onVisibleChanged: {
+        if (visible) {
+            results.searchQuery = ""
+            inputField.text = ""
+            focusTimer.start()
+        }
     }
 
-    // Positioned just below the bar's left island
-    anchors  { top: true; left: true }
-    margins  { top: 8; left: 12 }
-    implicitWidth:  420
-    implicitHeight: Math.min(mainCol.implicitHeight + 16, 520)
-    exclusiveZone:  0
-    color: "transparent"
+    Timer {
+        id: focusTimer
+        interval: 50
+        onTriggered: {
+            inputField.forceActiveFocus()
+        }
+    }
 
-    // ── App loading (once at startup) ────────────────────────────────────────
     property var allApps: []
-    property var _buf:    []
-
     Process {
         id: appLoader
-        command: ["python3", Qt.resolvedUrl("scripts/list-apps.py").toString().replace("file://", "")]
         running: true
+        command: ["python3", Qt.resolvedUrl("scripts/list-apps.py").toString().replace("file://", "")]
         stdout: SplitParser {
-            splitMarker: "\n"
-            onRead: d => {
-                if (!d.trim()) return
+            onRead: function(d) {
                 var p = d.split("|")
-                if (p.length >= 2 && p[0].trim() && p[1].trim())
-                    results._buf.push({ name: p[0].trim(), exec: p[1].trim(), iconPath: (p[2] || "").trim() })
+                if (p.length >= 2) {
+                    results.allApps.push({
+                        name: p[0].trim(),
+                        exec: p[1].trim(),
+                        iconPath: (p[2] || "").trim()
+                    })
+                }
             }
         }
-        onRunningChanged: { if (!running) results.allApps = results._buf.slice() }
     }
 
-    // ── Filtered apps ────────────────────────────────────────────────────────
-    property var filteredApps: {
-        if (!searchQuery || searchQuery.length < 1) return []
-        var q = searchQuery.toLowerCase()
-        var starts   = allApps.filter(a =>  a.name.toLowerCase().startsWith(q))
-        var contains = allApps.filter(a => !a.name.toLowerCase().startsWith(q)
-                                        &&  a.name.toLowerCase().includes(q))
-        return starts.concat(contains).slice(0, 8)
-    }
-
-    // ── Power options ────────────────────────────────────────────────────────
-    readonly property var powerOpts: [
-        { name: "Lock",     exec: "loginctl lock-session",  icon: "󰍁", clr: "#89b4fa" },
-        { name: "Suspend",  exec: "systemctl suspend",       icon: "󰒲", clr: "#89dceb" },
-        { name: "Logout",   exec: "hyprctl dispatch exit",   icon: "󰍃", clr: "#f9e2af" },
-        { name: "Reboot",   exec: "systemctl reboot",        icon: "󰜉", clr: "#fab387" },
-        { name: "Shutdown", exec: "systemctl poweroff",      icon: "󰐥", clr: "#f38ba8" }
-    ]
-
-    property var filteredPower: {
-        if (!searchQuery || searchQuery.length < 1) return powerOpts
-        var q = searchQuery.toLowerCase()
-        return powerOpts.filter(p => p.name.toLowerCase().includes(q))
-    }
-
-    // ── Launcher ─────────────────────────────────────────────────────────────
-    Process {
-        id: launcher
-        property string cmd: ""
-        command: ["/bin/bash", "-c", cmd]
-    }
-
-    function launch(exec) {
-        launcher.cmd = exec
-        launcher.running = true
+    function launch(app) {
+        var p = Qt.createQmlObject("import Quickshell.Io; Process {}", results)
+        p.command = ["bash", "-c", "setsid -f " + app.exec + " >/dev/null 2>&1 &"]
+        p.running = true
         results.launchCalled()
     }
 
-    function launchFirst() {
-        if (filteredApps.length > 0)   launch(filteredApps[0].exec)
-        else if (filteredPower.length > 0) launch(filteredPower[0].exec)
+    property var filteredApps: {
+        var q = searchQuery.toLowerCase()
+        var list = allApps.filter(function(a) {
+            return a.name.toLowerCase().includes(q)
+        })
+        return list.slice(0, 6)
     }
 
-    // ── Slide-down animation ─────────────────────────────────────────────────
-    Item {
+    MouseArea {
         anchors.fill: parent
-        clip: true
+        onClicked: {
+            results.launchCalled()
+        }
+    }
 
-        Rectangle {
-            id: dropDown
-            width:  parent.width
-            height: parent.height
-            y: results.searchOpen ? 0 : -parent.height
+    Rectangle {
+        width: 350
+        height: Math.min(mainCol.implicitHeight + 24, 450)
+        x: 20
+        y: 60
+        color: "#181825"
+        radius: 16
+        border {
+            color: "#313244"
+            width: 2
+        }
 
-            Behavior on y {
-                NumberAnimation { duration: 260; easing.type: Easing.OutCubic }
+        ColumnLayout {
+            id: mainCol
+            anchors {
+                fill: parent
+                margins: 12
+            }
+            spacing: 8
+
+            Rectangle {
+                Layout.fillWidth: true
+                Layout.preferredHeight: 40
+                radius: 10
+                color: "#313244"
+
+                RowLayout {
+                    anchors {
+                        fill: parent
+                        margins: 8
+                    }
+                    Text {
+                        text: "󰍉"
+                        color: "#b4befe"
+                    }
+                    TextInput {
+                        id: inputField
+                        Layout.fillWidth: true
+                        color: "#cdd6f4"
+                        font {
+                            pixelSize: 14
+                        }
+                        onTextChanged: {
+                            results.searchQuery = text
+                        }
+                        Keys.onPressed: function(event) {
+                            if (event.key === Qt.Key_Enter || event.key === Qt.Key_Return) {
+                                if (results.filteredApps.length > 0) {
+                                    results.launch(results.filteredApps[0])
+                                }
+                            }
+                            if (event.key === Qt.Key_Escape) {
+                                results.launchCalled()
+                            }
+                        }
+                    }
+                }
             }
 
-            color:  results.clrMantle
-            radius: 16
-            border { color: Qt.rgba(0.706, 0.745, 0.996, 0.35); width: 2 }
-
-            // Scroll if results overflow
-            Flickable {
-                anchors { fill: parent; margins: 8 }
-                clip:          true
-                contentWidth:  width
-                contentHeight: mainCol.implicitHeight
-
-                ColumnLayout {
-                    id:      mainCol
-                    width:   parent.width
-                    spacing: 2
-
-                    // ── Apps ─────────────────────────────────────────────────
-                    Text {
-                        visible: results.filteredApps.length > 0
-                        text:    "APPS"
-                        color:   results.clrLavender
-                        font     { family: "JetBrainsMono Nerd Font"; pixelSize: 9; bold: true; letterSpacing: 1.5 }
-                        Layout.topMargin: 6; Layout.leftMargin: 6; Layout.bottomMargin: 2
+            Repeater {
+                model: results.filteredApps
+                delegate: SearchItem {
+                    Layout.fillWidth: true
+                    itemLabel: modelData.name
+                    itemIconPath: modelData.iconPath
+                    onActivated: {
+                        results.launch(modelData)
                     }
-
-                    Repeater {
-                        model: results.filteredApps
-                        delegate: SearchItem {
-                            required property var modelData
-                            Layout.fillWidth: true
-                            itemIcon:     "󰀻"
-                            itemIconPath: modelData.iconPath
-                            itemColor:    results.clrBlue
-                            itemLabel:    modelData.name
-                            onActivated:  results.launch(modelData.exec)
-                        }
-                    }
-
-                    Rectangle {
-                        visible: results.filteredApps.length > 0 && results.filteredPower.length > 0
-                        Layout.fillWidth: true
-                        height: 1
-                        color:  results.clrSurface1
-                        Layout.topMargin: 4; Layout.bottomMargin: 4
-                    }
-
-                    // ── Power ─────────────────────────────────────────────────
-                    Text {
-                        visible: results.filteredPower.length > 0
-                        text:    "POWER"
-                        color:   results.clrLavender
-                        font     { family: "JetBrainsMono Nerd Font"; pixelSize: 9; bold: true; letterSpacing: 1.5 }
-                        Layout.topMargin: results.filteredApps.length > 0 ? 0 : 6
-                        Layout.leftMargin: 6; Layout.bottomMargin: 2
-                    }
-
-                    Repeater {
-                        model: results.filteredPower
-                        delegate: SearchItem {
-                            required property var modelData
-                            Layout.fillWidth: true
-                            itemIcon:  modelData.icon
-                            itemColor: modelData.clr
-                            itemLabel: modelData.name
-                            onActivated: results.launch(modelData.exec)
-                        }
-                    }
-
-                    Item { implicitHeight: 6 }
                 }
             }
         }
