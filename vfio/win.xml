@@ -1,5 +1,6 @@
 <domain type='kvm'>
   <name>win</name>
+  <uuid>29a50e5d-5728-4c2b-bd35-8942e79c8995</uuid>
   <memory unit='KiB'>33554432</memory>
   <currentMemory unit='KiB'>33554432</currentMemory>
   <memoryBacking>
