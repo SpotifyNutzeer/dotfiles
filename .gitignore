@@ -1,0 +1,3 @@
+vfio/*.qcow2
+vfio/*.iso
+vfio/*.fd
