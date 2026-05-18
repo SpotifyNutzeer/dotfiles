@@ -185,12 +185,14 @@ Es gibt **zwei Varianten**: eine **Bootstrap-Variante** für die Erst-Installati
     <iothreadpin iothread='1' cpuset='10-11'/>
   </cputune>
 
-  <os firmware='efi'>
+  <!--
+    Hinweis: libvirts firmware='efi' Autoselection scheitert auf Arch, weil
+    keine pre-enrolled OVMF_VARS-Variante existiert. Wir geben Loader und
+    NVRAM-Template daher explizit an und ueberlassen das Key-Enrollment
+    der Windows-Installation.
+  -->
+  <os>
     <type arch='x86_64' machine='pc-q35-9.0'>hvm</type>
-    <firmware>
-      <feature enabled='yes' name='enrolled-keys'/>
-      <feature enabled='yes' name='secure-boot'/>
-    </firmware>
     <loader readonly='yes' secure='yes' type='pflash'>/usr/share/edk2/x64/OVMF_CODE.secboot.4m.fd</loader>
     <nvram template='/usr/share/edk2/x64/OVMF_VARS.4m.fd'>/var/lib/libvirt/qemu/nvram/win_VARS.fd</nvram>
     <boot dev='hd'/>
