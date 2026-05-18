@@ -1,0 +1,26 @@
+#!/usr/bin/env bash
+# /etc/libvirt/hooks/qemu — Dispatcher
+#
+# libvirt ruft dieses Skript bei jedem qemu-Lifecycle-Event mit drei
+# Parametern: $1 = VM-Name, $2 = Action (prepare, start, started, stopped,
+# release, reconnect, migrate), $3 = Sub-Action (begin, end).
+#
+# Wir leiten weiter an Sub-Skripte in qemu.d/<vmname>/<action>/<sub_action>/.
+# Wenn der Pfad eine Datei ist, wird sie ausgefuehrt. Wenn er ein Verzeichnis
+# ist, werden alle ausfuehrbaren Dateien darin ausgefuehrt.
+
+set -e
+
+GUEST_NAME="$1"
+HOOK_NAME="$2"
+STATE_NAME="$3"
+
+HOOKPATH="/etc/libvirt/hooks/qemu.d/${GUEST_NAME}/${HOOK_NAME}/${STATE_NAME}"
+
+if [[ -f "$HOOKPATH" ]]; then
+    exec "$HOOKPATH"
+elif [[ -d "$HOOKPATH" ]]; then
+    while IFS= read -r file; do
+        [[ -x "$file" ]] && "$file"
+    done < <(find -L "$HOOKPATH" -maxdepth 1 -type f -print | sort)
+fi
