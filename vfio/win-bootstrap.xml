@@ -1,0 +1,145 @@
+<domain type='kvm'>
+  <name>win</name>
+  <memory unit='KiB'>33554432</memory>
+  <currentMemory unit='KiB'>33554432</currentMemory>
+  <memoryBacking>
+    <hugepages>
+      <page size='1' unit='GiB'/>
+    </hugepages>
+    <nosharepages/>
+  </memoryBacking>
+
+  <vcpu placement='static'>16</vcpu>
+  <iothreads>1</iothreads>
+  <cputune>
+    <vcpupin vcpu='0'  cpuset='0'/>
+    <vcpupin vcpu='1'  cpuset='16'/>
+    <vcpupin vcpu='2'  cpuset='1'/>
+    <vcpupin vcpu='3'  cpuset='17'/>
+    <vcpupin vcpu='4'  cpuset='2'/>
+    <vcpupin vcpu='5'  cpuset='18'/>
+    <vcpupin vcpu='6'  cpuset='3'/>
+    <vcpupin vcpu='7'  cpuset='19'/>
+    <vcpupin vcpu='8'  cpuset='4'/>
+    <vcpupin vcpu='9'  cpuset='20'/>
+    <vcpupin vcpu='10' cpuset='5'/>
+    <vcpupin vcpu='11' cpuset='21'/>
+    <vcpupin vcpu='12' cpuset='6'/>
+    <vcpupin vcpu='13' cpuset='22'/>
+    <vcpupin vcpu='14' cpuset='7'/>
+    <vcpupin vcpu='15' cpuset='23'/>
+    <emulatorpin cpuset='8-9'/>
+    <iothreadpin iothread='1' cpuset='10-11'/>
+  </cputune>
+
+  <os firmware='efi'>
+    <type arch='x86_64' machine='pc-q35-9.0'>hvm</type>
+    <firmware>
+      <feature enabled='yes' name='enrolled-keys'/>
+      <feature enabled='yes' name='secure-boot'/>
+    </firmware>
+    <loader readonly='yes' secure='yes' type='pflash'>/usr/share/edk2/x64/OVMF_CODE.secboot.4m.fd</loader>
+    <nvram template='/usr/share/edk2/x64/OVMF_VARS.4m.fd'>/var/lib/libvirt/qemu/nvram/win_VARS.fd</nvram>
+  </os>
+
+  <features>
+    <acpi/>
+    <apic/>
+    <hyperv mode='custom'>
+      <relaxed state='on'/>
+      <vapic state='on'/>
+      <spinlocks state='on' retries='8191'/>
+      <vpindex state='on'/>
+      <synic state='on'/>
+      <stimer state='on'/>
+      <reset state='on'/>
+      <vendor_id state='on' value='1234567890ab'/>
+      <frequencies state='on'/>
+      <reenlightenment state='on'/>
+      <tlbflush state='on'/>
+      <ipi state='on'/>
+    </hyperv>
+    <vmport state='off'/>
+    <smm state='on'/>
+  </features>
+
+  <cpu mode='host-passthrough' check='none' migratable='off'>
+    <topology sockets='1' dies='1' cores='8' threads='2'/>
+    <cache mode='passthrough'/>
+    <feature policy='require' name='topoext'/>
+    <feature policy='require' name='invtsc'/>
+  </cpu>
+
+  <clock offset='localtime'>
+    <timer name='rtc' tickpolicy='catchup'/>
+    <timer name='pit' tickpolicy='delay'/>
+    <timer name='hpet' present='no'/>
+    <timer name='kvmclock' present='yes'/>
+    <timer name='tsc' present='yes' mode='native'/>
+    <timer name='hypervclock' present='yes'/>
+  </clock>
+
+  <on_poweroff>destroy</on_poweroff>
+  <on_reboot>restart</on_reboot>
+  <on_crash>destroy</on_crash>
+  <pm>
+    <suspend-to-mem enabled='no'/>
+    <suspend-to-disk enabled='no'/>
+  </pm>
+
+  <devices>
+    <emulator>/usr/bin/qemu-system-x86_64</emulator>
+
+    <!-- Boot-Disk (qcow2 auf /home/paul/vms/) -->
+    <disk type='file' device='disk'>
+      <driver name='qemu' type='qcow2' cache='none' io='native' discard='unmap' iothread='1' queues='4'/>
+      <source file='/home/paul/vms/win.qcow2'/>
+      <target dev='vda' bus='virtio'/>
+      <boot order='2'/>
+    </disk>
+
+    <!-- Windows-11-ISO (Boot-Quelle fuer Initial-Install) -->
+    <disk type='file' device='cdrom'>
+      <driver name='qemu' type='raw'/>
+      <source file='/home/paul/iso/Win11.iso'/>
+      <target dev='sda' bus='sata'/>
+      <readonly/>
+      <boot order='1'/>
+    </disk>
+
+    <!-- virtio-win-ISO (Treiber waehrend Install + danach) -->
+    <disk type='file' device='cdrom'>
+      <driver name='qemu' type='raw'/>
+      <source file='/home/paul/iso/virtio-win.iso'/>
+      <target dev='sdb' bus='sata'/>
+      <readonly/>
+    </disk>
+
+    <!-- Netzwerk: libvirt-default-NAT -->
+    <interface type='network'>
+      <source network='default'/>
+      <model type='virtio'/>
+    </interface>
+
+    <!-- TPM 2.0 emuliert (Win11-Pflicht) -->
+    <tpm model='tpm-crb'>
+      <backend type='emulator' version='2.0'/>
+    </tpm>
+
+    <!-- Serial-Konsole fuer Debug -->
+    <serial type='pty'><target type='isa-serial' port='0'/></serial>
+    <console type='pty'><target type='serial' port='0'/></console>
+
+    <!-- Bootstrap: temporaeres VNC-Display + QXL-Video.
+         Wird in Produktiv-XML durch GPU-Passthrough ersetzt. -->
+    <graphics type='vnc' port='-1' autoport='yes' listen='127.0.0.1'>
+      <listen type='address' address='127.0.0.1'/>
+    </graphics>
+    <video>
+      <model type='qxl' ram='65536' vram='65536' vgamem='16384' heads='1' primary='yes'/>
+    </video>
+
+    <!-- USB-Tablet: macht Maus in VNC absolut positioniert, nicht relativ. -->
+    <input type='tablet' bus='usb'/>
+  </devices>
+</domain>
