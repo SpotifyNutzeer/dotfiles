@@ -1,89 +1,125 @@
 #!/usr/bin/env bash
-# Pre-Start-Hook fuer Single-GPU-Passthrough.
-# Wird von libvirt direkt vor dem QEMU-Start aufgerufen.
+# Pre-Start-Skript fuer Single-GPU-Passthrough.
+#
+# Wird in der jetzigen Konfiguration NICHT von libvirt aufgerufen
+# (managed='no' scheitert in der Validation, bevor libvirt zum Hook
+# kommt). Stattdessen ruft der Wrapper start-win.sh dieses Skript
+# manuell auf, BEVOR er virsh start ausfuehrt.
 #
 # Aufgaben:
-#   1. Display-Manager (sddm) stoppen, damit Nvidia-Treiber freigegeben wird
-#   2. Auf TTY wechseln, EFI-Framebuffer entbinden
-#   3. Nvidia-Module entladen (Reihenfolge wichtig)
-#   4. vfio-Module laden
-#   5. GPU, GPU-Audio und drei USB-Controller an vfio-pci binden
+#   1. Display-Manager (sddm) stoppen, damit alle GPU-Konsumenten gehen
+#   2. Warten, bis kein Prozess mehr /dev/nvidia* offen haelt
+#   3. Auf TTY wechseln, EFI-Framebuffer entbinden
+#   4. Nvidia-Module entladen (Reihenfolge wichtig)
+#   5. vfio-Module laden
+#   6. GPU, GPU-Audio und USB-Controller an vfio-pci binden
 #
-# Bei Fehler: Revert-Skript aufrufen, damit der Host nicht im halben
-# Zustand sitzt.
+# Bei Fehler: Revert-Skript aufrufen.
 
 set -e
 
-# === Geraete-Liste ===
-GPU_PCI="0000:01:00.0"          # RTX 4090
-GPU_AUDIO_PCI="0000:01:00.1"    # GPU-HDMI-Audio
-USB_GROUP22="0000:13:00.0"      # Chipset USB 3.x (hintere I/O)
-USB_GROUP27="0000:77:00.0"      # ASMedia USB 3.2
-USB_GROUP32="0000:79:00.4"      # AMD Raphael USB 3.1 (USB-C)
+GPU_PCI="0000:01:00.0"
+GPU_AUDIO_PCI="0000:01:00.1"
+USB_GROUP22="0000:13:00.0"
+USB_GROUP27="0000:77:00.0"
+USB_GROUP32="0000:79:00.4"
 
 ALL_DEVICES=(
     "$GPU_PCI" "$GPU_AUDIO_PCI"
     "$USB_GROUP22" "$USB_GROUP27" "$USB_GROUP32"
 )
 
-# Bei Fehler: revert + abort
-trap '/etc/libvirt/hooks/qemu.d/win/release/end/revert.sh || true; exit 1' ERR
+trap 'echo "[hook] FEHLER, triggere Revert…" >&2; /etc/libvirt/hooks/qemu.d/win/release/end/revert.sh || true; exit 1' ERR
 
-echo "[hook] Display-Manager stoppen…"
+log() { echo "[start] $*"; }
+
+log "Display-Manager stoppen…"
 systemctl stop sddm
 
-# Warten bis sddm wirklich tot
-for _ in {1..10}; do
+log "Warte, bis sddm-Service inaktiv ist…"
+for _ in {1..20}; do
     systemctl is-active sddm >/dev/null 2>&1 || break
     sleep 0.5
 done
 
-echo "[hook] Auf TTY2 wechseln…"
+log "Warte, bis alle Prozesse /dev/nvidia* freigegeben haben…"
+for _ in {1..30}; do
+    if ! lsof /dev/nvidia* 2>/dev/null | grep -q .; then
+        break
+    fi
+    sleep 0.5
+done
+
+# Falls noch Prozesse haengen: kill (oft Hyprland-Kinder die nicht
+# schnell genug beenden)
+if lsof /dev/nvidia* 2>/dev/null | tail -n +2 | awk '{print $2}' | sort -u > /tmp/nvidia-holders.$$; then
+    if [[ -s /tmp/nvidia-holders.$$ ]]; then
+        log "Restliche GPU-Halter werden gekillt…"
+        while read -r pid; do
+            kill -TERM "$pid" 2>/dev/null || true
+        done < /tmp/nvidia-holders.$$
+        sleep 2
+        # Notfall SIGKILL
+        while read -r pid; do
+            kill -KILL "$pid" 2>/dev/null || true
+        done < /tmp/nvidia-holders.$$
+    fi
+    rm -f /tmp/nvidia-holders.$$
+fi
+
+log "Auf TTY2 wechseln…"
 chvt 2 || true
 
-echo "[hook] Framebuffer-Treiber entbinden…"
-if [[ -d /sys/bus/platform/drivers/efi-framebuffer ]]; then
-    for fb in /sys/bus/platform/drivers/efi-framebuffer/*; do
+log "Framebuffer-Treiber entbinden…"
+for drv_dir in /sys/bus/platform/drivers/efi-framebuffer /sys/bus/platform/drivers/simple-framebuffer; do
+    [[ -d "$drv_dir" ]] || continue
+    for fb in "$drv_dir"/*; do
         name=$(basename "$fb")
-        [[ "$name" == "bind" || "$name" == "unbind" || "$name" == "uevent" ]] && continue
-        echo "$name" > /sys/bus/platform/drivers/efi-framebuffer/unbind 2>/dev/null || true
+        [[ "$name" == "bind" || "$name" == "unbind" || "$name" == "uevent" || "$name" == "module" ]] && continue
+        echo "$name" > "$drv_dir/unbind" 2>/dev/null || true
     done
-fi
-if [[ -d /sys/bus/platform/drivers/simple-framebuffer ]]; then
-    for fb in /sys/bus/platform/drivers/simple-framebuffer/*; do
-        name=$(basename "$fb")
-        [[ "$name" == "bind" || "$name" == "unbind" || "$name" == "uevent" ]] && continue
-        echo "$name" > /sys/bus/platform/drivers/simple-framebuffer/unbind 2>/dev/null || true
-    done
+done
+
+log "Nvidia-Module entladen…"
+# Reihenfolge wichtig: uvm → drm → modeset → nvidia
+for mod in nvidia_uvm nvidia_drm nvidia_modeset nvidia; do
+    if lsmod | awk '{print $1}' | grep -qx "$mod"; then
+        log "  → modprobe -r $mod"
+        modprobe -r "$mod"
+    fi
+done
+
+# Sicherheits-Check: alle Nvidia-Module wirklich weg?
+if lsmod | awk '{print $1}' | grep -qE '^nvidia'; then
+    log "FEHLER: Nvidia-Module noch geladen nach modprobe -r:"
+    lsmod | grep '^nvidia'
+    exit 1
 fi
 
-echo "[hook] Nvidia-Module entladen…"
-modprobe -r nvidia_uvm   || true
-modprobe -r nvidia_drm   || true
-modprobe -r nvidia_modeset || true
-modprobe -r nvidia       || true
-
-echo "[hook] vfio-Module laden…"
+log "vfio-Module laden…"
 modprobe vfio
 modprobe vfio_iommu_type1
 modprobe vfio_pci
 
-echo "[hook] Devices an vfio-pci binden…"
+log "Devices an vfio-pci binden…"
 for dev in "${ALL_DEVICES[@]}"; do
-    vendor=$(cat /sys/bus/pci/devices/$dev/vendor)
-    device=$(cat /sys/bus/pci/devices/$dev/device)
-    # Aktuellen Treiber entbinden, falls vorhanden
+    # driver_override auf vfio-pci setzen (sorgt fuer "sticky" binding)
+    echo "vfio-pci" > /sys/bus/pci/devices/$dev/driver_override
+
+    # Aktuellen Treiber entbinden (falls vorhanden und nicht schon vfio-pci)
     if [[ -L /sys/bus/pci/devices/$dev/driver ]]; then
         current_driver=$(basename "$(readlink /sys/bus/pci/devices/$dev/driver)")
         if [[ "$current_driver" != "vfio-pci" ]]; then
+            log "  → unbind $dev von $current_driver"
             echo "$dev" > /sys/bus/pci/devices/$dev/driver/unbind
         fi
     fi
-    # vfio-pci als neuen Treiber registrieren und binden (idempotent)
-    echo "${vendor#0x} ${device#0x}" > /sys/bus/pci/drivers/vfio-pci/new_id 2>/dev/null || true
+
+    # An vfio-pci binden
     if [[ ! -L /sys/bus/pci/devices/$dev/driver ]]; then
-        echo "$dev" > /sys/bus/pci/drivers/vfio-pci/bind 2>/dev/null || true
+        log "  → bind $dev an vfio-pci"
+        echo "$dev" > /sys/bus/pci/drivers/vfio-pci/bind
     fi
 done
 
-echo "[hook] Pre-Start fertig, libvirt kann QEMU starten."
+log "Pre-Start fertig. Devices sind an vfio-pci."
