@@ -21,13 +21,15 @@ if [[ ! -x "$HOOK_PRE" ]]; then
     exit 1
 fi
 
-# Sanity-Check: GPU darf nicht von Apps genutzt werden
+# Sanity-Check: keine USER-App darf die GPU noch nutzen.
+# System-Daemons (coolercontrold, lactd, Xorg, sddm-greeter) erledigt
+# der Pre-Start-Hook spaeter.
 if command -v lsof >/dev/null; then
-    holders=$(sudo lsof /dev/nvidia* 2>/dev/null | tail -n +2 || true)
-    if [[ -n "$holders" ]]; then
-        echo "FEHLER: GPU wird noch von folgenden Prozessen genutzt:" >&2
-        echo "$holders" >&2
-        echo "Bitte alle GPU-Apps (Browser, Discord, Steam, …) schliessen." >&2
+    user_holders=$(sudo lsof /dev/nvidia* 2>/dev/null | awk -v u="$USER" 'NR>1 && $3==u' || true)
+    if [[ -n "$user_holders" ]]; then
+        echo "FEHLER: GPU wird noch von eigenen Apps genutzt:" >&2
+        echo "$user_holders" >&2
+        echo "Bitte Browser, Discord, Steam, Spiele etc. schliessen." >&2
         exit 1
     fi
 fi

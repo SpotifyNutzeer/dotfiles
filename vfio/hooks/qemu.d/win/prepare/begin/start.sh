@@ -33,6 +33,18 @@ trap 'echo "[hook] FEHLER, triggere Revert…" >&2; /etc/libvirt/hooks/qemu.d/wi
 
 log() { echo "[start] $*"; }
 
+# System-Daemons, die die GPU offen halten und stoppt werden muessen.
+# Werden im revert.sh wieder gestartet.
+GPU_DAEMONS=(coolercontrold lactd)
+
+log "GPU-System-Daemons stoppen…"
+for svc in "${GPU_DAEMONS[@]}"; do
+    if systemctl is-active "$svc" >/dev/null 2>&1; then
+        log "  → systemctl stop $svc"
+        systemctl stop "$svc"
+    fi
+done
+
 log "Display-Manager stoppen…"
 systemctl stop sddm
 

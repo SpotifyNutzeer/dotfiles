@@ -82,4 +82,15 @@ done
 log "Display-Manager starten…"
 systemctl start sddm
 
+# GPU-Daemons, die in start.sh gestoppt wurden, wieder hochziehen
+GPU_DAEMONS=(coolercontrold lactd)
+log "GPU-System-Daemons wieder starten…"
+for svc in "${GPU_DAEMONS[@]}"; do
+    if systemctl list-unit-files --no-legend --type=service 2>/dev/null \
+        | awk '{print $1}' | grep -qx "${svc}.service"; then
+        log "  → systemctl start $svc"
+        systemctl start "$svc" || true
+    fi
+done
+
 log "Revert fertig."
