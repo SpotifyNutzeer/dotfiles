@@ -9,8 +9,8 @@ Item {
 
     signal clicked()
 
-    implicitWidth:  28
-    implicitHeight: 28
+    width:  28
+    height: 28
     Layout.alignment: Qt.AlignVCenter
 
     Rectangle {

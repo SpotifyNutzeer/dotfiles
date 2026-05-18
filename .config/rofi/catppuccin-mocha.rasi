@@ -14,6 +14,7 @@
     peach:    #fab387;
     red:      #f38ba8;
     pink:     #f5c2e7;
+    teal:     #94e2d5;
 
     background-color: transparent;
     text-color:       @text;
@@ -21,8 +22,8 @@
 
 window {
     background-color: @base;
-    border:           1px;
-    border-color:     @surface1;
+    border:           2px;
+    border-color:     @teal;
     border-radius:    14px;
     width:            600px;
     padding:          12px;
@@ -52,7 +53,7 @@ prompt {
 
 entry {
     background-color: transparent;
-    text-color:       @text;
+    text-color:       @teal;
     placeholder:      "Suchen...";
     placeholder-color: @overlay0;
 }
@@ -80,7 +81,7 @@ element normal.normal {
 
 element selected.normal {
     background-color: @surface0;
-    text-color:       @blue;
+    text-color:       @teal;
 }
 
 element alternate.normal {

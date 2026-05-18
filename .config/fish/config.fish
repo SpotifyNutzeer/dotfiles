@@ -3,3 +3,4 @@ if status is-interactive
 end
 export PATH="$HOME/.local/bin:$PATH"
 starship init fish | source
+export DOCKER_HOST=unix:///run/user/1000/docker.sock

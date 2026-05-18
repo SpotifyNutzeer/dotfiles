@@ -40,15 +40,15 @@ PanelWindow {
     // ── Screen ───────────────────────────────────────────────────────────────
     screen: {
         for (var i = 0; i < Quickshell.screens.length; i++)
-            if (Quickshell.screens[i].name === "DP-1")
+            if (Quickshell.screens[i].name === "HDMI-A-1")
                 return Quickshell.screens[i]
         return Quickshell.screens[0]
     }
 
     anchors { top: true; left: true; right: true }
-    margins { top: 8; left: 12; right: 12 }
+    margins { top: 10; left: 10; right: 10 }
     implicitHeight: 44
-    exclusiveZone: 52
+    exclusiveZone:  44
     color: "transparent"
 
     // ── Stats state ──────────────────────────────────────────────────────────
@@ -66,6 +66,42 @@ PanelWindow {
     property string netUp:     "0K"
     property string clockTime:   Qt.formatTime(new Date(), "hh:mm")
     property string windowTitle: ""
+
+    // ── Graph history ────────────────────────────────────────────────────────
+    signal statsToggled()
+    readonly property real centerIslandWidth: centerIsland.width
+
+    // ── Music overlay ─────────────────────────────────────────────────────────
+    signal musicToggled()
+    readonly property real musicIslandX:     musicIsland.x
+    readonly property real musicIslandWidth: musicIsland.width
+    property var  cpuHistory:      []
+    property var  gpuHistory:      []
+    property var  ramHistory:      []
+    property var  netDownHistory:  []
+
+    property real netDownMax: {
+        if (netDownHistory.length === 0) return 1000
+        var m = 1
+        for (var i = 0; i < netDownHistory.length; i++)
+            if (netDownHistory[i] > m) m = netDownHistory[i]
+        return m * 1.2
+    }
+
+    function appendHistory(arr, val) {
+        var a = arr.slice()
+        a.push(val)
+        if (a.length > 60) a.shift()
+        return a
+    }
+
+    function parseNetKB(s) {
+        if (!s) return 0
+        var n = parseFloat(s) || 0
+        if (s.indexOf("G") !== -1) return n * 1024 * 1024
+        if (s.indexOf("M") !== -1) return n * 1024
+        return n
+    }
 
     // ── Visualizer state ─────────────────────────────────────────────────────
     property var  barValues:   []
@@ -87,6 +123,7 @@ PanelWindow {
     }
 
     Process {
+        id: cavaProc
         command: ["cava", "-p",
                   Qt.resolvedUrl("scripts/cava.ini").toString().replace("file://", "")]
         running: true
@@ -98,6 +135,14 @@ PanelWindow {
                     bar.barValues = parts.map(v => Math.max(0, parseInt(v) || 0))
             }
         }
+        onRunningChanged: if (!running) cavaRestartTimer.restart()
+    }
+
+    Timer {
+        id: cavaRestartTimer
+        interval: 1000
+        repeat: false
+        onTriggered: cavaProc.running = true
     }
 
     // ── MPRIS ─────────────────────────────────────────────────────────────────
@@ -157,7 +202,7 @@ PanelWindow {
     Process {
         id: cpuUsageProc
         command: ["/bin/bash", Qt.resolvedUrl("scripts/cpu-usage.sh").toString().replace("file://", "")]
-        stdout: SplitParser { splitMarker: "\n"; onRead: d => { if (d.trim()) bar.cpuUsage = d.trim() } }
+        stdout: SplitParser { splitMarker: "\n"; onRead: d => { if (d.trim()) { bar.cpuUsage = d.trim(); bar.cpuHistory = bar.appendHistory(bar.cpuHistory, parseFloat(d.trim()) || 0) } } }
     }
     Process {
         id: cpuClockProc
@@ -177,12 +222,12 @@ PanelWindow {
     Process {
         id: ramProc
         command: ["/bin/bash", Qt.resolvedUrl("scripts/ram.sh").toString().replace("file://", "")]
-        stdout: SplitParser { splitMarker: "\n"; onRead: d => { if (d.trim()) bar.ramUsed = d.trim() } }
+        stdout: SplitParser { splitMarker: "\n"; onRead: d => { if (d.trim()) { bar.ramUsed = d.trim(); bar.ramHistory = bar.appendHistory(bar.ramHistory, parseFloat(d.trim()) || 0) } } }
     }
     Process {
         id: gpuUsageProc
         command: ["/bin/bash", Qt.resolvedUrl("scripts/gpu-usage.sh").toString().replace("file://", "")]
-        stdout: SplitParser { splitMarker: "\n"; onRead: d => { if (d.trim()) bar.gpuUsage = d.trim() } }
+        stdout: SplitParser { splitMarker: "\n"; onRead: d => { if (d.trim()) { bar.gpuUsage = d.trim(); bar.gpuHistory = bar.appendHistory(bar.gpuHistory, parseFloat(d.trim()) || 0) } } }
     }
     Process {
         id: gpuClockProc
@@ -212,7 +257,11 @@ PanelWindow {
             onRead: d => {
                 if (!d.trim()) return
                 var parts = d.trim().split(" ")
-                if (parts.length >= 2) { bar.netDown = parts[0]; bar.netUp = parts[1] }
+                if (parts.length >= 2) {
+                    bar.netDown = parts[0]
+                    bar.netUp   = parts[1]
+                    bar.netDownHistory = bar.appendHistory(bar.netDownHistory, bar.parseNetKB(parts[0]))
+                }
             }
         }
     }
@@ -268,11 +317,11 @@ PanelWindow {
         // ── Left island: Workspaces + Buttons ───────────────────────────────
         Rectangle {
             id: leftIsland
-            anchors { left: parent.left; verticalCenter: parent.verticalCenter }
-            height: parent.height - 4
+            anchors { left: parent.left; top: parent.top; topMargin: 2 }
+            height: 40
             radius: 12
             color: bar.clrBase
-            border { color: Qt.rgba(0.706, 0.745, 0.996, 0.55); width: 2 }
+            border { color: Qt.rgba(0.537, 0.863, 0.922, 0.55); width: 2 }
             clip: true
             width: leftRow.implicitWidth + 16
 
@@ -298,7 +347,7 @@ PanelWindow {
                             Hyprland.focusedMonitor.activeWorkspace.id === modelData.id
                         width: 28; height: 28
                         radius: 6
-                        color: isActive ? bar.clrLavender : bar.clrSurface0
+                        color: isActive ? bar.clrSky : bar.clrSurface0
                         Text {
                             anchors.centerIn: parent
                             text:  modelData.id
@@ -323,7 +372,7 @@ PanelWindow {
                 // Rofi launcher button
                 BarButton {
                     icon:      "󰍉"
-                    iconColor: bar.clrLavender
+                    iconColor: bar.clrSky
                     onClicked: bar.launchRofi()
                 }
             }
@@ -332,11 +381,11 @@ PanelWindow {
         // ── Window title island ───────────────────────────────────────────────
         Rectangle {
             id: windowIsland
-            anchors { left: leftIsland.right; leftMargin: 8; verticalCenter: parent.verticalCenter }
-            height:  parent.height - 4
+            anchors { left: leftIsland.right; leftMargin: 8; top: parent.top; topMargin: 2 }
+            height:  40
             radius:  12
             color:   bar.clrBase
-            border   { color: Qt.rgba(0.706, 0.745, 0.996, 0.55); width: 2 }
+            border   { color: Qt.rgba(0.537, 0.863, 0.922, 0.55); width: 2 }
             visible: bar.windowTitle.length > 0
             implicitWidth: Math.min(winRow.implicitWidth + 20, 280)
             clip: true
@@ -363,12 +412,13 @@ PanelWindow {
         // ── Music island: track + controls + progress ────────────────────────
         Rectangle {
             id: musicIsland
-            anchors.verticalCenter: parent.verticalCenter
+            anchors.top: parent.top
+            anchors.topMargin: 2
             x: (leftIsland.x + leftIsland.width + centerIsland.x) / 2 - width / 2
-            height:  parent.height - 4
+            height:  40
             radius:  12
             color:   bar.clrBase
-            border   { color: Qt.rgba(0.706, 0.745, 0.996, 0.55); width: 2 }
+            border   { color: Qt.rgba(0.537, 0.863, 0.922, 0.55); width: 2 }
             visible: bar.activePlayer !== null
             width:   musicRow.implicitWidth + 20
 
@@ -377,14 +427,19 @@ PanelWindow {
                 anchors.centerIn: parent
                 spacing: 8
 
-                // Icon
+                // Icon (klick öffnet Overlay)
                 Text {
                     text:  "󰝚"
                     color: bar.clrMauve
                     font   { family: "JetBrainsMono Nerd Font"; pixelSize: 13 }
+                    MouseArea {
+                        anchors.fill: parent
+                        onClicked: bar.musicToggled()
+                        cursorShape: Qt.PointingHandCursor
+                    }
                 }
 
-                // Scrolling title
+                // Scrolling title (klick öffnet Overlay)
                 Item {
                     id: titleClip
                     implicitWidth: 180
@@ -433,6 +488,12 @@ PanelWindow {
                             easing.type: Easing.InOutCubic
                         }
                     }
+
+                    MouseArea {
+                        anchors.fill: parent
+                        onClicked: bar.musicToggled()
+                        cursorShape: Qt.PointingHandCursor
+                    }
                 }
 
                 Rectangle { width: 1; height: 20; color: bar.clrSurface1 }
@@ -450,7 +511,7 @@ PanelWindow {
                 Text {
                     text: (bar.activePlayer && bar.activePlayer.playbackState === MprisPlaybackState.Playing)
                           ? "󰏥" : "󰐊"
-                    color: bar.clrLavender
+                    color: bar.clrSky
                     font  { family: "JetBrainsMono Nerd Font"; pixelSize: 16 }
                     MouseArea {
                         anchors.fill: parent; cursorShape: Qt.PointingHandCursor
@@ -498,7 +559,7 @@ PanelWindow {
                                : 0
                         height: parent.height
                         radius: 2
-                        color: bar.clrLavender
+                        color: bar.clrSky
                     }
                     MouseArea {
                         anchors { fill: parent; margins: -6 }
@@ -524,11 +585,11 @@ PanelWindow {
         // ── Center island: Stats ─────────────────────────────────────────────
         Rectangle {
             id: centerIsland
-            anchors { horizontalCenter: parent.horizontalCenter; verticalCenter: parent.verticalCenter }
-            height: parent.height - 4
+            anchors { horizontalCenter: parent.horizontalCenter; top: parent.top; topMargin: 2 }
+            height: 40
             radius: 12
             color: bar.clrBase
-            border { color: Qt.rgba(0.706, 0.745, 0.996, 0.55); width: 2 }
+            border { color: Qt.rgba(0.537, 0.863, 0.922, 0.55); width: 2 }
             width: statsRow.implicitWidth + 24
 
             RowLayout {
@@ -558,16 +619,22 @@ PanelWindow {
                 StatItem { icon: "󰁆"; value: bar.netDown; iconColor: bar.clrBlue;     textColor: bar.clrText }
                 StatItem { icon: "󰁞"; value: bar.netUp;   iconColor: bar.clrSapphire; textColor: bar.clrText }
             }
+
+            MouseArea {
+                anchors.fill: parent
+                onClicked: bar.statsToggled()
+                cursorShape: Qt.PointingHandCursor
+            }
         }
 
         // ── Visualizer island ────────────────────────────────────────────────
         Rectangle {
             id: vizIsland
-            anchors { right: rightIsland.left; rightMargin: 8; verticalCenter: parent.verticalCenter }
-            height:  parent.height - 4
+            anchors { right: rightIsland.left; rightMargin: 8; top: parent.top; topMargin: 2 }
+            height:  40
             radius:  12
             color:   bar.clrBase
-            border   { color: Qt.rgba(0.706, 0.745, 0.996, bar.hasAudio ? 0.55 : 0.0); width: 2 }
+            border   { color: Qt.rgba(0.537, 0.863, 0.922, bar.hasAudio ? 0.55 : 0.0); width: 2 }
             width:   vizBars.implicitWidth + 20
             opacity: bar.hasAudio ? 1.0 : 0.0
 
@@ -596,8 +663,8 @@ PanelWindow {
                             radius: 1
                             gradient: Gradient {
                                 orientation: Gradient.Vertical
-                                GradientStop { position: 0.0; color: "#e0e4ff" }
-                                GradientStop { position: 1.0; color: Qt.rgba(0.706, 0.745, 0.996, 0.4) }
+                                GradientStop { position: 0.0; color: "#c8eef5" }
+                                GradientStop { position: 1.0; color: Qt.rgba(0.537, 0.863, 0.922, 0.4) }
                             }
                             Behavior on height { NumberAnimation { duration: 55; easing.type: Easing.OutQuad } }
                         }
@@ -609,11 +676,11 @@ PanelWindow {
         // ── Right island: Tray + Clock + Power ──────────────────────────────
         Rectangle {
             id: rightIsland
-            anchors { right: parent.right; verticalCenter: parent.verticalCenter }
-            height: parent.height - 4
+            anchors { right: parent.right; top: parent.top; topMargin: 2 }
+            height: 40
             radius: 12
             color: bar.clrBase
-            border { color: Qt.rgba(0.706, 0.745, 0.996, 0.55); width: 2 }
+            border { color: Qt.rgba(0.537, 0.863, 0.922, 0.55); width: 2 }
             width: rightRow.implicitWidth + 16
 
             RowLayout {

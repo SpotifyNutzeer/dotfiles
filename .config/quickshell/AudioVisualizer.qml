@@ -48,6 +48,7 @@ PanelWindow {
 
     // ── Cava ──────────────────────────────────────────────────────────────────
     Process {
+        id: cavaProc
         command: ["cava", "-p",
                   Qt.resolvedUrl("scripts/cava.ini").toString().replace("file://", "")]
         running: true
@@ -59,6 +60,14 @@ PanelWindow {
                     viz.barValues = parts.map(v => Math.max(0, parseInt(v) || 0))
             }
         }
+        onRunningChanged: if (!running) cavaRestartTimer.restart()
+    }
+
+    Timer {
+        id: cavaRestartTimer
+        interval: 1000
+        repeat: false
+        onTriggered: cavaProc.running = true
     }
 
     // ── Visual ────────────────────────────────────────────────────────────────
@@ -82,7 +91,7 @@ PanelWindow {
             radius: 40
             color:  Qt.rgba(0.094, 0.094, 0.137, viz.hasAudio ? 0.92 : 0.0)
             border {
-                color: Qt.rgba(0.706, 0.745, 0.996, viz.hasAudio ? 0.35 : 0.0)
+                color: Qt.rgba(0.537, 0.863, 0.922, viz.hasAudio ? 0.35 : 0.0)
                 width: 2
             }
 
@@ -92,7 +101,7 @@ PanelWindow {
                 width:   parent.width * 0.8
                 height:  2
                 radius:  1
-                color:   Qt.rgba(0.706, 0.745, 0.996, viz.hasAudio ? 0.6 : 0.0)
+                color:   Qt.rgba(0.537, 0.863, 0.922, viz.hasAudio ? 0.6 : 0.0)
             }
         }
 
@@ -123,7 +132,7 @@ PanelWindow {
                         width:  parent.width + 6
                         height: Math.max(1, parent.height * parent.val)
                         radius: 8
-                        color:  Qt.rgba(0.706, 0.745, 0.996, 0.18 * parent.val)
+                        color:  Qt.rgba(0.537, 0.863, 0.922, 0.18 * parent.val)
                         Behavior on height { NumberAnimation { duration: 60; easing.type: Easing.OutQuad } }
                     }
 
@@ -135,9 +144,9 @@ PanelWindow {
                         radius: 4
                         gradient: Gradient {
                             orientation: Gradient.Vertical
-                            GradientStop { position: 0.0; color: "#e0e4ff" }
-                            GradientStop { position: 0.5; color: "#b4befe" }
-                            GradientStop { position: 1.0; color: Qt.rgba(0.706, 0.745, 0.996, 0.4) }
+                            GradientStop { position: 0.0; color: "#c8eef5" }
+                            GradientStop { position: 0.5; color: "#89dceb" }
+                            GradientStop { position: 1.0; color: Qt.rgba(0.537, 0.863, 0.922, 0.4) }
                         }
                         Behavior on height { NumberAnimation { duration: 60; easing.type: Easing.OutQuad } }
                     }

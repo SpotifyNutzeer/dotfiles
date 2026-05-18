@@ -111,7 +111,7 @@ PanelWindow {
                     }
                     Text {
                         text: "󰍉"
-                        color: "#b4befe"
+                        color: "#89dceb"
                     }
                     TextInput {
                         id: inputField

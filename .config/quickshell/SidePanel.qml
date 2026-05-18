@@ -117,7 +117,7 @@ PanelWindow {
             Behavior on x { NumberAnimation { duration: 300; easing.type: Easing.OutCubic } }
             color: panel.clrMantle
             radius: 16
-            border { color: Qt.rgba(0.706, 0.745, 0.996, 0.15); width: 1 }
+            border { color: Qt.rgba(0.537, 0.863, 0.922, 0.15); width: 1 }
 
             ColumnLayout {
                 anchors { fill: parent; margins: 14 }
@@ -133,7 +133,7 @@ PanelWindow {
                         color: panel.clrSurface0
                         Text {
                             anchors.centerIn: parent
-                            text: "󰄛"; color: panel.clrLavender
+                            text: "󰄛"; color: panel.clrSky
                             font { pixelSize: 16; family: "JetBrainsMono Nerd Font" }
                         }
                     }
@@ -176,10 +176,10 @@ PanelWindow {
                             height: 52
                             radius: 12
                             color: modelData.active
-                                   ? Qt.rgba(0.706, 0.745, 0.996, 0.2)
+                                   ? Qt.rgba(0.537, 0.863, 0.922, 0.2)
                                    : panel.clrSurface0
                             border {
-                                color: modelData.active ? panel.clrLavender : "transparent"
+                                color: modelData.active ? panel.clrSky : "transparent"
                                 width: 1
                             }
 
@@ -189,13 +189,13 @@ PanelWindow {
                                 Text {
                                     Layout.alignment: Qt.AlignHCenter
                                     text: modelData.icon
-                                    color: modelData.active ? panel.clrLavender : panel.clrSubtext0
+                                    color: modelData.active ? panel.clrSky : panel.clrSubtext0
                                     font { pixelSize: 16; family: "JetBrainsMono Nerd Font" }
                                 }
                                 Text {
                                     Layout.alignment: Qt.AlignHCenter
                                     text: modelData.label
-                                    color: modelData.active ? panel.clrLavender : panel.clrSubtext0
+                                    color: modelData.active ? panel.clrSky : panel.clrSubtext0
                                     font { pixelSize: 9; family: "JetBrainsMono Nerd Font" }
                                 }
                             }
@@ -370,7 +370,7 @@ PanelWindow {
                                 }
                                 Text {
                                     text: (panel.activePlayer && panel.activePlayer.playbackState === MprisPlaybackState.Playing) ? "󰏥" : "󰐊"
-                                    color: panel.clrLavender
+                                    color: panel.clrSky
                                     font { pixelSize: 16; family: "JetBrainsMono Nerd Font" }
                                     MouseArea {
                                         anchors.fill: parent; cursorShape: Qt.PointingHandCursor
