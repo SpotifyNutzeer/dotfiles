@@ -7,12 +7,13 @@
 # manuell auf, BEVOR er virsh start ausfuehrt.
 #
 # Aufgaben:
-#   1. Display-Manager (sddm) stoppen, damit alle GPU-Konsumenten gehen
-#   2. Warten, bis kein Prozess mehr /dev/nvidia* offen haelt
-#   3. Auf TTY wechseln, EFI-Framebuffer entbinden
-#   4. Nvidia-Module entladen (Reihenfolge wichtig)
-#   5. vfio-Module laden
-#   6. GPU, GPU-Audio und USB-Controller an vfio-pci binden
+#   1. Display-Manager (sddm) stoppen
+#   2. User-Sessions auf seat0 terminieren (Hyprland & Co. halten /dev/dri/*)
+#   3. Warten, bis /dev/nvidia* und /dev/dri/* freigegeben sind
+#   4. Auf TTY wechseln, EFI-Framebuffer entbinden
+#   5. Nvidia-Module entladen (Reihenfolge wichtig)
+#   6. vfio-Module laden
+#   7. GPU, GPU-Audio und USB-Controller an vfio-pci binden
 #
 # Bei Fehler: Revert-Skript aufrufen.
 
@@ -54,19 +55,31 @@ for _ in {1..20}; do
     sleep 0.5
 done
 
-log "Warte, bis alle Prozesse /dev/nvidia* freigegeben haben…"
-for _ in {1..30}; do
-    if ! lsof /dev/nvidia* 2>/dev/null | grep -q .; then
+# sddm-Stop beendet nur den Greeter. Die User-Session (Hyprland, Xwayland,
+# kitty, quickshell) laeuft unter user@.service auf seat0 weiter und haelt
+# /dev/dri/cardN offen — das blockiert spaeter nvidia_drm unload.
+# SSH-Sessions haben keinen Seat und bleiben unangetastet.
+log "User-Sessions auf seat0 terminieren…"
+mapfile -t sessions < <(loginctl list-sessions --no-legend 2>/dev/null | awk '$4 == "seat0" {print $1}')
+for sess in "${sessions[@]}"; do
+    [[ -n "$sess" ]] || continue
+    log "  → loginctl terminate-session $sess"
+    loginctl terminate-session "$sess" 2>/dev/null || true
+done
+
+log "Warte, bis /dev/nvidia* und /dev/dri/* freigegeben sind…"
+for _ in {1..60}; do
+    if ! lsof /dev/nvidia* /dev/dri/* 2>/dev/null | grep -q .; then
         break
     fi
     sleep 0.5
 done
 
-# Falls noch Prozesse haengen: kill (oft Hyprland-Kinder die nicht
-# schnell genug beenden)
-if lsof /dev/nvidia* 2>/dev/null | tail -n +2 | awk '{print $2}' | sort -u > /tmp/nvidia-holders.$$; then
+# Falls noch Prozesse haengen: kill (Hyprland-Kinder, die loginctl nicht
+# schnell genug abgeraeumt hat)
+if lsof /dev/nvidia* /dev/dri/* 2>/dev/null | tail -n +2 | awk '{print $2}' | sort -u > /tmp/nvidia-holders.$$; then
     if [[ -s /tmp/nvidia-holders.$$ ]]; then
-        log "Restliche GPU-Halter werden gekillt…"
+        log "Restliche GPU/DRM-Halter werden gekillt…"
         while read -r pid; do
             kill -TERM "$pid" 2>/dev/null || true
         done < /tmp/nvidia-holders.$$
