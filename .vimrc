@@ -10,6 +10,21 @@ call plug#end()
 " ── Theme ───────────────────────────────────────────────────────
 set termguicolors
 syntax on
+
+" Transparenter Hintergrund passend zum transparenten Terminal.
+" Per Autocmd, damit es ein :colorscheme-Reload überlebt.
+augroup TransparentBackground
+  autocmd!
+  autocmd ColorScheme * highlight Normal       guibg=NONE ctermbg=NONE
+  autocmd ColorScheme * highlight NormalNC     guibg=NONE ctermbg=NONE
+  autocmd ColorScheme * highlight NonText      guibg=NONE ctermbg=NONE
+  autocmd ColorScheme * highlight EndOfBuffer  guibg=NONE ctermbg=NONE
+  autocmd ColorScheme * highlight SignColumn   guibg=NONE ctermbg=NONE
+  autocmd ColorScheme * highlight LineNr       guibg=NONE ctermbg=NONE
+  autocmd ColorScheme * highlight CursorLineNr guibg=NONE ctermbg=NONE
+  autocmd ColorScheme * highlight FoldColumn   guibg=NONE ctermbg=NONE
+augroup END
+
 silent! colorscheme catppuccin_mocha
 
 " ── Airline (Powerline-Statusbar) ───────────────────────────────
