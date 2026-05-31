@@ -6,6 +6,9 @@ RowLayout {
     property string value:     ""
     property color  iconColor: "#cdd6f4"
     property color  textColor: "#cdd6f4"
+    // >0: reserviert feste Breite für so viele Monospace-Zeichen, damit der
+    // Wert beim Wechsel der Stellenzahl die Bar nicht springen lässt.
+    property int    valueChars: 0
 
     spacing: 4
 
@@ -16,9 +19,20 @@ RowLayout {
         Layout.alignment: Qt.AlignVCenter
     }
     Text {
+        id: valueText
         text: value
         color: textColor
         font { family: "JetBrainsMono Nerd Font"; pixelSize: 13 }
         Layout.alignment: Qt.AlignVCenter
+        // Feste Reserve, aber nie abschneiden: bei Überlänge wächst der Wert mit.
+        Layout.preferredWidth: valueChars > 0
+            ? Math.max(implicitWidth, Math.ceil(valueMetrics.advanceWidth * valueChars))
+            : implicitWidth
+    }
+
+    TextMetrics {
+        id: valueMetrics
+        font: valueText.font
+        text: "0"
     }
 }

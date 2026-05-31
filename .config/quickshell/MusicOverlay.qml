@@ -20,6 +20,7 @@ PanelWindow {
     readonly property color clrText:     "#cdd6f4"
     readonly property color clrSubtext0: "#a6adc8"
     readonly property color clrLavender: "#b4befe"
+    readonly property color clrSky:      "#89dceb"
     readonly property color clrMauve:    "#cba6f7"
     readonly property string nfFont:     "JetBrainsMono Nerd Font"
 
@@ -34,7 +35,7 @@ PanelWindow {
     // ── Fenster ──────────────────────────────────────────────────────────────
     screen: {
         for (var i = 0; i < Quickshell.screens.length; i++)
-            if (Quickshell.screens[i].name === "DP-1")
+            if (Quickshell.screens[i].name === "HDMI-A-1")
                 return Quickshell.screens[i]
         return Quickshell.screens[0]
     }
@@ -59,7 +60,7 @@ PanelWindow {
 
         radius: 12
         color:  overlay.clrBase
-        border  { color: Qt.rgba(0.706, 0.745, 0.996, 0.55); width: 2 }
+        border  { color: Qt.rgba(0.537, 0.863, 0.922, 0.55); width: 2 }
         clip:   true
         opacity: overlay.musicOpen ? 1.0 : 0.0
         Behavior on opacity { NumberAnimation { duration: 220; easing.type: Easing.InOutQuad } }
@@ -134,13 +135,13 @@ PanelWindow {
                         height: 17
                         width: badgeText.implicitWidth + 12
                         radius: 4
-                        color: Qt.rgba(0.706, 0.745, 0.996, 0.10)
-                        border { color: Qt.rgba(0.706, 0.745, 0.996, 0.25); width: 1 }
+                        color: Qt.rgba(0.537, 0.863, 0.922, 0.10)
+                        border { color: Qt.rgba(0.537, 0.863, 0.922, 0.25); width: 1 }
                         Text {
                             id: badgeText
                             anchors.centerIn: parent
                             text: overlay.player ? (overlay.player.identity ?? "") : ""
-                            color: Qt.rgba(0.706, 0.745, 0.996, 0.65)
+                            color: Qt.rgba(0.537, 0.863, 0.922, 0.65)
                             font { family: overlay.nfFont; pixelSize: 10 }
                         }
                     }
@@ -173,7 +174,7 @@ PanelWindow {
                     text: (overlay.player &&
                            overlay.player.playbackState === MprisPlaybackState.Playing)
                           ? "󰏥" : "󰐊"
-                    color: overlay.clrLavender
+                    color: overlay.clrSky
                     font { family: overlay.nfFont; pixelSize: 28 }
                     MouseArea {
                         anchors.fill: parent; cursorShape: Qt.PointingHandCursor
@@ -227,7 +228,7 @@ PanelWindow {
                                ? parent.width * Math.min(overlay.trackPosition / overlay.trackLength, 1)
                                : 0
                         height: parent.height; radius: 3
-                        color: overlay.clrLavender
+                        color: overlay.clrSky
                     }
                     MouseArea {
                         anchors { fill: parent; margins: -8 }

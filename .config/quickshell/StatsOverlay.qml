@@ -98,7 +98,7 @@ PanelWindow {
     // ── Fenster ──────────────────────────────────────────────────────────────
     screen: {
         for (var i = 0; i < Quickshell.screens.length; i++)
-            if (Quickshell.screens[i].name === "DP-1")
+            if (Quickshell.screens[i].name === "HDMI-A-1")
                 return Quickshell.screens[i]
         return Quickshell.screens[0]
     }
@@ -116,7 +116,7 @@ PanelWindow {
         width:  overlay.panelWidth
         radius: 12
         color:  overlay.clrBase
-        border  { color: Qt.rgba(0.706, 0.745, 0.996, 0.55); width: 2 }
+        border  { color: Qt.rgba(0.537, 0.863, 0.922, 0.55); width: 2 }
         clip:   true
         opacity: overlay.statsOpen ? 1.0 : 0.0
         Behavior on opacity { NumberAnimation { duration: 220; easing.type: Easing.InOutQuad } }
@@ -329,7 +329,7 @@ PanelWindow {
 
                 // Hostname
                 Row { spacing: 4
-                    Text { text: "󰟀"; color: overlay.clrLavender; font { family: overlay.nfFont; pixelSize: 13 } }
+                    Text { text: "󰟀"; color: overlay.clrSky; font { family: overlay.nfFont; pixelSize: 13 } }
                     Text { text: overlay.hostname; color: overlay.clrText; font { family: overlay.nfFont; pixelSize: 12 } }
                 }
 
