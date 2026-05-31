@@ -125,7 +125,7 @@ PanelWindow {
     Process {
         id: cavaProc
         command: ["cava", "-p",
-                  Qt.resolvedUrl("scripts/cava.ini").toString().replace("file://", "")]
+                  Qt.resolvedUrl("scripts/cava-bar.ini").toString().replace("file://", "")]
         running: true
         stdout: SplitParser {
             splitMarker: "\n"
@@ -597,27 +597,27 @@ PanelWindow {
                 anchors.centerIn: parent
                 spacing: 14
 
-                StatItem { icon: "󰻠"; value: bar.cpuUsage + "%"; iconColor: bar.clrGreen;   textColor: bar.clrText }
-                StatItem { icon: "󰓅"; value: bar.cpuClock;        iconColor: bar.clrSky;     textColor: bar.clrText }
-                StatItem { icon: "󱐋"; value: bar.cpuPower;        iconColor: bar.clrPeach;   textColor: bar.clrText }
-                StatItem { icon: "󰔏"; value: bar.cpuTemp + "°C";  iconColor: bar.clrYellow;  textColor: bar.clrText }
+                StatItem { icon: "󰻠"; value: bar.cpuUsage + "%"; valueChars: 4; iconColor: bar.clrGreen;   textColor: bar.clrText }
+                StatItem { icon: "󰓅"; value: bar.cpuClock;        valueChars: 7; iconColor: bar.clrSky;     textColor: bar.clrText }
+                StatItem { icon: "󱐋"; value: bar.cpuPower;        valueChars: 4; iconColor: bar.clrPeach;   textColor: bar.clrText }
+                StatItem { icon: "󰔏"; value: bar.cpuTemp + "°C";  valueChars: 4; iconColor: bar.clrYellow;  textColor: bar.clrText }
 
                 Rectangle { width: 1; height: 20; color: bar.clrSurface1 }
 
-                StatItem { icon: "󰍛"; value: bar.ramUsed + "G";   iconColor: bar.clrMauve;   textColor: bar.clrText }
+                StatItem { icon: "󰍛"; value: bar.ramUsed + "G";   valueChars: 5; iconColor: bar.clrMauve;   textColor: bar.clrText }
 
                 Rectangle { width: 1; height: 20; color: bar.clrSurface1 }
 
-                StatItem { icon: "󰢮"; value: bar.gpuUsage + "%";  iconColor: bar.clrTeal;    textColor: bar.clrText }
-                StatItem { icon: "󰓅"; value: bar.gpuClock;         iconColor: bar.clrSky;     textColor: bar.clrText }
-                StatItem { icon: "󱐋"; value: bar.gpuPower;         iconColor: bar.clrPeach;   textColor: bar.clrText }
-                StatItem { icon: "󰔏"; value: bar.gpuTemp + "°C";   iconColor: bar.clrYellow;  textColor: bar.clrText }
-                StatItem { icon: "󰆧"; value: bar.gpuVram;          iconColor: bar.clrSky;     textColor: bar.clrText }
+                StatItem { icon: "󰢮"; value: bar.gpuUsage + "%";  valueChars: 4; iconColor: bar.clrTeal;    textColor: bar.clrText }
+                StatItem { icon: "󰓅"; value: bar.gpuClock;         valueChars: 7; iconColor: bar.clrSky;     textColor: bar.clrText }
+                StatItem { icon: "󱐋"; value: bar.gpuPower;         valueChars: 4; iconColor: bar.clrPeach;   textColor: bar.clrText }
+                StatItem { icon: "󰔏"; value: bar.gpuTemp + "°C";   valueChars: 4; iconColor: bar.clrYellow;  textColor: bar.clrText }
+                StatItem { icon: "󰆧"; value: bar.gpuVram;          valueChars: 6; iconColor: bar.clrSky;     textColor: bar.clrText }
 
                 Rectangle { width: 1; height: 20; color: bar.clrSurface1 }
 
-                StatItem { icon: "󰁆"; value: bar.netDown; iconColor: bar.clrBlue;     textColor: bar.clrText }
-                StatItem { icon: "󰁞"; value: bar.netUp;   iconColor: bar.clrSapphire; textColor: bar.clrText }
+                StatItem { icon: "󰁆"; value: bar.netDown; valueChars: 5; iconColor: bar.clrBlue;     textColor: bar.clrText }
+                StatItem { icon: "󰁞"; value: bar.netUp;   valueChars: 5; iconColor: bar.clrSapphire; textColor: bar.clrText }
             }
 
             MouseArea {
