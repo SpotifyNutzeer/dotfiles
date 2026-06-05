@@ -20,7 +20,9 @@ Der Installer:
    `multilib`; mit Backup), synchronisiert die Paket-DBs und installiert die
    Pakete aus `packages/` (`pacman` + AUR via `yay`, das bei Bedarf
    gebootstrappt wird). Die App-Pakete (discord, brave-beta-bin,
-   tidal-hifi-tidaluna, vencord-hook) stehen in den `arch-*`-Listen,
+   tidal-hifi-tidaluna, vencord-hook) stehen in den `arch-*`-Listen. Sofern
+   kein anderer Display-Manager vorhanden ist, wird SDDM installiert, mit dem
+   Catppuccin-Theme (aus `system/sddm.conf.d/`) konfiguriert und aktiviert,
 2. verlinkt `.config/*` und `.vimrc` ins Home (bei Konflikten wird interaktiv
    gefragt: Backup / skip / overwrite),
 3. verlinkt die eigenen systemd-User-Units und aktiviert die in den

@@ -44,6 +44,44 @@ configure_pacman() {
     log_ok "pacman.conf angepasst (Color, ParallelDownloads, multilib)"
 }
 
+# Bekannte Display-Manager außer sddm.
+_OTHER_DISPLAY_MANAGERS=(gdm lightdm lxdm ly greetd entrance slim xdm)
+
+# _other_dm_present — 0 (true), wenn ein ANDERER Display-Manager als sddm aktiv
+# oder installiert ist. Dann fassen wir den DM nicht an.
+_other_dm_present() {
+    local link dm
+    if link="$(readlink /etc/systemd/system/display-manager.service 2>/dev/null)"; then
+        [[ "$link" == *sddm* ]] || return 0   # ein anderer DM ist aktiv
+    fi
+    for dm in "${_OTHER_DISPLAY_MANAGERS[@]}"; do
+        pacman -Q "$dm" >/dev/null 2>&1 && return 0
+    done
+    return 1
+}
+
+# setup_sddm — installiert + konfiguriert SDDM, sofern kein anderer DM vorhanden
+# ist. Idempotent. Setzt voraus, dass _ensure_yay nutzbar ist.
+setup_sddm() {
+    if _other_dm_present; then
+        log_info "anderer Display-Manager vorhanden — SDDM übersprungen"
+        return 0
+    fi
+
+    log_info "richte SDDM ein"
+    run sudo pacman -S --needed --noconfirm sddm
+    if _ensure_yay; then
+        run yay -S --needed --noconfirm catppuccin-sddm-theme-mocha
+    fi
+
+    # Theme-Konfiguration nach /etc/sddm.conf.d/ (legt das Verzeichnis bei Bedarf an).
+    local src="$DOTFILES_DIR/system/sddm.conf.d/theme.conf"
+    [[ -f "$src" ]] && run sudo install -Dm 644 "$src" /etc/sddm.conf.d/theme.conf
+
+    run sudo systemctl enable sddm.service
+    log_ok "SDDM aktiviert"
+}
+
 # _ensure_yay — stellt sicher, dass yay verfügbar ist (sonst Bootstrap aus AUR).
 _ensure_yay() {
     command -v yay >/dev/null 2>&1 && return 0
@@ -86,6 +124,9 @@ install_packages_arch() {
             run yay -S --needed --noconfirm "${aur_list[@]}"
         fi
     fi
+
+    # Display-Manager (SDDM), sofern kein anderer vorhanden.
+    setup_sddm
 }
 
 # _install_best_effort <installer-cmd...> < liste : versucht jedes Paket einzeln,
