@@ -7,7 +7,7 @@ Persönliche Konfiguration für ein Arch-Linux/Hyprland-Setup (Catppuccin Mocha)
 Nach einer Neuinstallation:
 
 ```bash
-git clone <dieses-repo> ~/git/dotfiles
+git clone https://github.com/SpotifyNutzeer/dotfiles ~/git/dotfiles
 cd ~/git/dotfiles
 ./install.sh            # Arch: Pakete + Symlinks + systemd + fisher
 ```
