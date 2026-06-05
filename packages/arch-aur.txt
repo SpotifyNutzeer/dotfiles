@@ -1,0 +1,2 @@
+quickshell
+papirus-folders-catppuccin-git

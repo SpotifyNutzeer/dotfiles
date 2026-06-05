@@ -1,0 +1,29 @@
+# Shell & Terminals
+fish
+kitty
+alacritty
+tmux
+starship
+htop
+vim
+# Wayland / Hyprland
+hyprland
+hyprpolkitagent
+# Audio
+pipewire
+pipewire-pulse
+wireplumber
+sox
+# Tools
+rofi-wayland
+cava
+mangohud
+brightnessctl
+playerctl
+# Fonts & Icons
+ttf-jetbrains-mono-nerd
+papirus-icon-theme
+# Basis (u.a. für AUR-Bootstrap)
+git
+curl
+base-devel

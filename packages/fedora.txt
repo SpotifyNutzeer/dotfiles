@@ -1,0 +1,24 @@
+# Best-effort. Vieles (quickshell, papirus-folders-catppuccin) fehlt und
+# wird beim Lauf nur gewarnt. hyprland ist in neueren Fedora-Repos verfügbar.
+fish
+kitty
+alacritty
+tmux
+starship
+htop
+vim
+hyprland
+pipewire
+pipewire-pulse
+wireplumber
+sox
+rofi-wayland
+cava
+mangohud
+brightnessctl
+playerctl
+jetbrains-mono-fonts
+papirus-icon-theme
+git
+curl
+# nicht sicher verfügbar: hyprpolkitagent quickshell papirus-folders-catppuccin-git
