@@ -14,8 +14,11 @@ cd ~/git/dotfiles
 
 Der Installer:
 
-1. installiert die Pakete aus `packages/` (Arch: `pacman` + AUR via `yay`,
-   das bei Bedarf gebootstrappt wird),
+1. passt auf Arch `/etc/pacman.conf` an (`Color`, `ParallelDownloads`,
+   `multilib`; mit Backup), synchronisiert die Paket-DBs und installiert die
+   Pakete aus `packages/` (`pacman` + AUR via `yay`, das bei Bedarf
+   gebootstrappt wird). Die App-Pakete (discord, brave-beta-bin,
+   tidal-hifi-tidaluna, vencord-hook) stehen in den `arch-*`-Listen,
 2. verlinkt `.config/*` und `.vimrc` ins Home (bei Konflikten wird interaktiv
    gefragt: Backup / skip / overwrite),
 3. verlinkt die eigenen systemd-User-Units und aktiviert die in den

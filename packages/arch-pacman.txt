@@ -27,3 +27,5 @@ papirus-icon-theme
 git
 curl
 base-devel
+# Apps (genutzt, nicht aus Configs abgeleitet)
+discord

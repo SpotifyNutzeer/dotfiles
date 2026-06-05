@@ -86,6 +86,10 @@ Fertig. Hinweise:
 • Papirus-Ordnerfarbe (optional):
     papirus-folders -C cat-mocha-teal --theme Papirus-Dark
 
+• Vencord: vencord-hook patcht Discord bei pacman-Transaktionen. Falls Discord
+  noch nicht gepatcht ist, einmal triggern (Discord vorher schließen):
+    sudo pacman -S discord
+
 • rodecaster-tidal-bridge ist NICHT Teil dieses Installers.
   Eigenes Projekt: https://github.com/SpotifyNutzeer/rodecaster-tidal-bridge
   Manuell klonen/einrichten (config.toml wurde mitverlinkt).

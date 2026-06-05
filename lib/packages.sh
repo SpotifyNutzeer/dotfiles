@@ -14,6 +14,36 @@ parse_package_list() {
     done < "$file"
 }
 
+# _apply_pacman_edits <conf> — aktiviert Color, ParallelDownloads und [multilib]
+# in der gegebenen pacman.conf. Idempotent, editiert die Datei direkt (der
+# Aufrufer sorgt für Schreibrechte). Reine Funktion -> testbar ohne sudo.
+_apply_pacman_edits() {
+    local conf="$1"
+    grep -q '^#Color' "$conf" && sed -i 's/^#Color/Color/' "$conf"
+    grep -q '^#ParallelDownloads' "$conf" && sed -i 's/^#ParallelDownloads/ParallelDownloads/' "$conf"
+    # multilib nur aktivieren, wenn nicht bereits aktiv. Der Range entfernt das
+    # führende # von der [multilib]-Zeile bis zur zugehörigen Include-Zeile.
+    grep -q '^\[multilib\]' "$conf" || sed -i '/^#\[multilib\]/,/^#Include/ s/^#//' "$conf"
+    return 0
+}
+
+# configure_pacman — wendet _apply_pacman_edits auf /etc/pacman.conf an
+# (mit einmaligem Backup, via sudo). Nur Arch.
+configure_pacman() {
+    local conf="/etc/pacman.conf"
+    [[ -f "$conf" ]] || { log_warn "$conf nicht gefunden — übersprungen"; return 0; }
+
+    if [[ "$DRY_RUN" -eq 1 ]]; then
+        log_info "[dry-run] $conf anpassen: Color, ParallelDownloads, [multilib] (mit Backup)"
+        return 0
+    fi
+
+    [[ -f "$conf.dotfiles-bak" ]] || sudo cp "$conf" "$conf.dotfiles-bak"
+    # Funktion in eine root-Shell exportieren, damit die Edits Schreibrechte haben.
+    sudo bash -c "$(declare -f _apply_pacman_edits); _apply_pacman_edits '$conf'"
+    log_ok "pacman.conf angepasst (Color, ParallelDownloads, multilib)"
+}
+
 # _ensure_yay — stellt sicher, dass yay verfügbar ist (sonst Bootstrap aus AUR).
 _ensure_yay() {
     command -v yay >/dev/null 2>&1 && return 0
@@ -35,6 +65,12 @@ _ensure_yay() {
 
 # install_packages_arch
 install_packages_arch() {
+    # pacman.conf zuerst anpassen (u.a. multilib), dann DBs syncen + upgraden,
+    # damit die multilib-Datenbank verfügbar ist und kein Partial-Upgrade passiert.
+    configure_pacman
+    log_info "synchronisiere Paketdatenbanken + System (pacman -Syu)"
+    run sudo pacman -Syu --noconfirm
+
     local pacman_list aur_list
     mapfile -t pacman_list < <(parse_package_list "$DOTFILES_DIR/packages/arch-pacman.txt")
     mapfile -t aur_list < <(parse_package_list "$DOTFILES_DIR/packages/arch-aur.txt")
