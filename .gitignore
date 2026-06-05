@@ -1,3 +1,10 @@
 vfio/*.qcow2
 vfio/*.iso
 vfio/*.fd
+
+# fish: von fisher/Plugins generierte Dateien nicht tracken.
+# Nur config.fish + fish_plugins gehören ins Repo; fisher installiert den Rest.
+.config/fish/completions/
+.config/fish/conf.d/
+.config/fish/functions/
+.config/fish/themes/
