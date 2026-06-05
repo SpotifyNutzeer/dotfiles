@@ -1,0 +1,22 @@
+# Best-effort. Vieles (hyprland, quickshell, papirus-folders-catppuccin)
+# ist auf Debian nicht paketiert und wird beim Lauf nur gewarnt.
+fish
+kitty
+alacritty
+tmux
+htop
+vim
+pipewire
+pipewire-pulse
+wireplumber
+sox
+rofi
+cava
+mangohud
+brightnessctl
+playerctl
+fonts-jetbrains-mono
+papirus-icon-theme
+git
+curl
+# nicht in Debian-Repos: hyprland hyprpolkitagent quickshell starship papirus-folders-catppuccin-git

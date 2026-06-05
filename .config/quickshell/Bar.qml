@@ -749,7 +749,7 @@ PanelWindow {
 
     function powerMenu() {
         var proc = Qt.createQmlObject(
-            'import Quickshell.Io; Process { command: ["/bin/bash", "/home/paul/.config/waybar/powermenu.sh"] }',
+            'import Quickshell.Io; Process { command: ["/bin/bash", "-c", "$HOME/.config/quickshell/scripts/powermenu.sh"] }',
             bar
         )
         proc.running = true
