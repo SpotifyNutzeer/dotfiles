@@ -156,8 +156,8 @@ mit Kommentaren bei den nicht verfügbaren.
 
 1. **Papirus-Folders-Farbe (optional):** Das AUR-Paket installiert das Theme,
    färbt aber nichts automatisch. Hinweis ausgeben bzw. optional ausführen:
-   `papirus-folders -C cat-mocha-blue --theme Papirus-Dark`
-   (Akzentfarbe `cat-mocha-blue` als Default; im Script leicht änderbar.)
+   `papirus-folders -C cat-mocha-teal --theme Papirus-Dark`
+   (Akzentfarbe `cat-mocha-teal`; im Script leicht änderbar.)
 2. **rodecaster-tidal-bridge:** eigenes Projekt, nicht Teil dieses Installers.
    Hinweis: manuell von https://github.com/SpotifyNutzeer/rodecaster-tidal-bridge
    klonen und einrichten (liegt lokal unter `~/git/rodecaster-tidal-bridge`).
