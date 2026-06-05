@@ -44,6 +44,7 @@ source "$DOTFILES_DIR/lib/packages.sh"
 source "$DOTFILES_DIR/lib/symlinks.sh"
 source "$DOTFILES_DIR/lib/systemd.sh"
 source "$DOTFILES_DIR/lib/fisher.sh"
+source "$DOTFILES_DIR/lib/vim.sh"
 
 # Distro bestimmen
 if [[ -n "$DISTRO_OVERRIDE" ]]; then
@@ -85,7 +86,11 @@ setup_systemd_services
 log_info "richte fish-Plugins ein"
 setup_fisher
 
-# 5. Abschluss-Hinweise
+# 5. vim-plug
+log_info "richte vim-Plugins ein"
+setup_vim_plug
+
+# 6. Abschluss-Hinweise
 cat >&2 <<'EOF'
 
 ────────────────────────────────────────────────────────

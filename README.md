@@ -29,7 +29,8 @@ Der Installer:
    gefragt: Backup / skip / overwrite),
 3. verlinkt die eigenen systemd-User-Units und aktiviert die in den
    `*.target.wants/` deklarierten Services (`sunshine` ausgenommen),
-4. installiert die fish-Plugins aus `fish_plugins` via fisher.
+4. installiert die fish-Plugins aus `fish_plugins` via fisher,
+5. installiert vim-plug und die in der `.vimrc` deklarierten vim-Plugins.
 
 ### Optionen
 
