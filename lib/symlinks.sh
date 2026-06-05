@@ -20,8 +20,10 @@ _resolve_conflict() {
         printf '%s' "$CONFLICT_ALL"
         return 0
     fi
-    local reply
-    read -r -p "Konflikt bei $dst — [B]ackup / [s]kip / [o]verwrite / [A]lle backuppen: " reply
+    local reply=""
+    # `|| true`: ohne TTY (EOF) würde read non-zero liefern und unter
+    # `set -e` (Orchestrator) den Lauf abbrechen. Leeres reply -> Default Backup.
+    read -r -p "Konflikt bei $dst — [B]ackup / [s]kip / [o]verwrite / [A]lle backuppen: " reply || true
     case "$reply" in
         s|S) printf 'skip' ;;
         o|O) printf 'overwrite' ;;
@@ -54,8 +56,15 @@ link_item() {
                 ;;
             backup)
                 _ensure_backup_dir
-                run mv "$dst" "$BACKUP_DIR/$(basename "$dst")"
-                log_info "gesichert nach $BACKUP_DIR/$(basename "$dst")"
+                # Basename-Kollision vermeiden (zwei Konflikte mit gleichem
+                # Namen würden sonst dasselbe Backup-Ziel überschreiben).
+                local target="$BACKUP_DIR/$(basename "$dst")" n=1
+                while [[ -e "$target" || -L "$target" ]]; do
+                    target="$BACKUP_DIR/$(basename "$dst").$n"
+                    n=$((n + 1))
+                done
+                run mv "$dst" "$target"
+                log_info "gesichert nach $target"
                 ;;
         esac
     fi

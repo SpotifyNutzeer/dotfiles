@@ -30,4 +30,18 @@ BACKUP_DIR="$tmp/backup" CONFLICT_ALL="backup" link_item "$tmp/repo/bar" "$dst2"
 assert_symlink_to "$dst2" "$tmp/repo/bar" "link_item setzt Symlink nach Backup"
 assert_eq "$(cat "$tmp/backup/bar")" "realdata" "link_item sichert Konflikt-Datei ins Backup"
 
+# Fall 4: skip -> Ziel bleibt unverändert, kein Symlink
+dst3="$tmp/home/baz"
+mkdir -p "$tmp/repo/baz"
+printf 'keep\n' > "$dst3"
+CONFLICT_ALL="skip" link_item "$tmp/repo/baz" "$dst3"
+assert_eq "$(cat "$dst3")" "keep" "link_item skip lässt Ziel unverändert"
+
+# Fall 5: overwrite -> Ziel wird durch Symlink ersetzt
+dst4="$tmp/home/qux"
+mkdir -p "$tmp/repo/qux"
+printf 'old\n' > "$dst4"
+CONFLICT_ALL="overwrite" link_item "$tmp/repo/qux" "$dst4"
+assert_symlink_to "$dst4" "$tmp/repo/qux" "link_item overwrite ersetzt Ziel durch Symlink"
+
 finish
