@@ -50,6 +50,9 @@ set_default_shell_fish() {
     # fish muss in /etc/shells stehen, sonst lehnt chsh ab.
     grep -qx "$fish_path" /etc/shells 2>/dev/null \
         || sudo sh -c "echo '$fish_path' >> /etc/shells"
-    sudo chsh -s "$fish_path" "$USER"
-    log_ok "Login-Shell auf fish gesetzt ($fish_path)"
+    if sudo chsh -s "$fish_path" "$USER"; then
+        log_ok "Login-Shell auf fish gesetzt ($fish_path) — gilt ab nächstem Login"
+    else
+        log_warn "chsh fehlgeschlagen — Login-Shell nicht geändert"
+    fi
 }

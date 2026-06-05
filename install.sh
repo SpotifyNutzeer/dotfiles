@@ -64,7 +64,6 @@ fi
 #    sudo-Prompts bereits Feedback zeigen.
 log_info "richte System-Konfiguration ein"
 configure_sudo_pwfeedback
-set_default_shell_fish
 
 # 1. Pakete
 if [[ "$NO_PACKAGES" -eq 1 ]]; then
@@ -72,6 +71,10 @@ if [[ "$NO_PACKAGES" -eq 1 ]]; then
 else
     install_packages "$DETECTED_DISTRO"
 fi
+
+# 1b. Login-Shell auf fish — NACH der Paketinstallation, da fish hier erst
+#     installiert wird (sonst würde der Schritt sich mangels fish überspringen).
+set_default_shell_fish
 
 # 2. Symlinks
 log_info "verlinke Dotfiles"
