@@ -14,6 +14,8 @@ cd ~/git/dotfiles
 
 Der Installer:
 
+0. aktiviert sudo-Passwort-Feedback (Sternchen beim Tippen) über ein
+   validiertes Drop-in unter `/etc/sudoers.d/` (distro-unabhängig),
 1. passt auf Arch `/etc/pacman.conf` an (`Color`, `ParallelDownloads`,
    `multilib`; mit Backup), synchronisiert die Paket-DBs und installiert die
    Pakete aus `packages/` (`pacman` + AUR via `yay`, das bei Bedarf

@@ -39,6 +39,7 @@ export DRY_RUN
 
 # shellcheck source=lib/common.sh
 source "$DOTFILES_DIR/lib/common.sh"
+source "$DOTFILES_DIR/lib/system.sh"
 source "$DOTFILES_DIR/lib/packages.sh"
 source "$DOTFILES_DIR/lib/symlinks.sh"
 source "$DOTFILES_DIR/lib/systemd.sh"
@@ -57,6 +58,11 @@ if [[ "$DETECTED_DISTRO" == "unknown" ]]; then
     log_error "Distro nicht erkannt. Nutze --distro <arch|debian|fedora>."
     exit 1
 fi
+
+# 0. System-Konfiguration (sudo Passwort-Feedback) — zuerst, damit folgende
+#    sudo-Prompts bereits Feedback zeigen.
+log_info "richte System-Konfiguration ein"
+configure_sudo_pwfeedback
 
 # 1. Pakete
 if [[ "$NO_PACKAGES" -eq 1 ]]; then
