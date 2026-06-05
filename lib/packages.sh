@@ -68,7 +68,7 @@ _install_best_effort() {
 
 # install_packages_debian
 install_packages_debian() {
-    run sudo apt-get update
+    run sudo apt-get update || log_warn "apt-get update fehlgeschlagen — fahre fort"
     parse_package_list "$DOTFILES_DIR/packages/debian.txt" \
         | _install_best_effort sudo apt-get install -y
 }

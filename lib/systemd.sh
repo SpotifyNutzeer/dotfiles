@@ -47,9 +47,11 @@ setup_systemd_services() {
         link_item "$svc" "$dst_dir/$name"
     done
 
-    run systemctl --user daemon-reload
+    run systemctl --user daemon-reload || log_warn "daemon-reload fehlgeschlagen — fahre fort"
 
-    # Aktivierungen aus den *.target.wants/ ableiten.
+    # Aktivierungen aus den *.target.wants/ ableiten. best-effort: ein fehlender
+    # Unit (z.B. auf Debian/Fedora) oder fehlende User-Session darf den Lauf
+    # nicht abbrechen.
     local wanted
     while IFS= read -r wanted; do
         [[ -n "$wanted" ]] || continue
@@ -57,7 +59,10 @@ setup_systemd_services() {
             log_warn "Service übersprungen (nicht installiert): $wanted"
             continue
         fi
-        run systemctl --user enable "$wanted"
-        log_ok "enabled: $wanted"
+        if run systemctl --user enable "$wanted"; then
+            log_ok "enabled: $wanted"
+        else
+            log_warn "konnte nicht aktivieren (übersprungen): $wanted"
+        fi
     done < <(_systemd_wanted_services "$src_dir")
 }

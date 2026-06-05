@@ -23,7 +23,14 @@ while [[ $# -gt 0 ]]; do
     case "$1" in
         --no-packages) NO_PACKAGES=1; shift ;;
         --dry-run)     DRY_RUN=1; shift ;;
-        --distro)      DISTRO_OVERRIDE="${2:-}"; shift 2 ;;
+        --distro)
+            DISTRO_OVERRIDE="${2:-}"
+            case "$DISTRO_OVERRIDE" in
+                arch|debian|fedora) ;;
+                *) echo "Fehler: --distro braucht ein Argument (arch|debian|fedora)" >&2; usage; exit 1 ;;
+            esac
+            shift 2
+            ;;
         -h|--help)     usage; exit 0 ;;
         *)             echo "Unbekannte Option: $1" >&2; usage; exit 1 ;;
     esac

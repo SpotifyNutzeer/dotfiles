@@ -17,13 +17,6 @@ run() {
     "$@"
 }
 
-# confirm <prompt> — ja/nein, Default nein. Gibt 0 bei ja zurück.
-confirm() {
-    local reply
-    read -r -p "$1 [y/N] " reply
-    [[ "$reply" == "y" || "$reply" == "Y" ]]
-}
-
 # detect_distro — setzt globale Variable DETECTED_DISTRO.
 # Liest aus $OS_RELEASE (Default /etc/os-release), testbar.
 detect_distro() {
