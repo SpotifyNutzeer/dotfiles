@@ -15,7 +15,8 @@ cd ~/git/dotfiles
 Der Installer:
 
 0. aktiviert sudo-Passwort-Feedback (Sternchen beim Tippen) über ein
-   validiertes Drop-in unter `/etc/sudoers.d/` (distro-unabhängig),
+   validiertes Drop-in unter `/etc/sudoers.d/` und setzt die Login-Shell auf
+   fish (`chsh`, idempotent; distro-unabhängig),
 1. passt auf Arch `/etc/pacman.conf` an (`Color`, `ParallelDownloads`,
    `multilib`; mit Backup), synchronisiert die Paket-DBs und installiert die
    Pakete aus `packages/` (`pacman` + AUR via `yay`, das bei Bedarf
@@ -23,7 +24,8 @@ Der Installer:
    tidal-hifi-tidaluna, vencord-hook) stehen in den `arch-*`-Listen. Sofern
    kein anderer Display-Manager vorhanden ist, wird SDDM installiert, mit dem
    Catppuccin-Theme (aus `system/sddm.conf.d/`) konfiguriert und aktiviert,
-2. verlinkt `.config/*` und `.vimrc` ins Home (bei Konflikten wird interaktiv
+2. verlinkt `.config/*` und `.vimrc` ins Home sowie die Wallpaper aus
+   `wallpapers/` nach `~/Pictures/Wallpapers/` (bei Konflikten wird interaktiv
    gefragt: Backup / skip / overwrite),
 3. verlinkt die eigenen systemd-User-Units und aktiviert die in den
    `*.target.wants/` deklarierten Services (`sunshine` ausgenommen),

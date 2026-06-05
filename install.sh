@@ -63,6 +63,7 @@ fi
 #    sudo-Prompts bereits Feedback zeigen.
 log_info "richte System-Konfiguration ein"
 configure_sudo_pwfeedback
+set_default_shell_fish
 
 # 1. Pakete
 if [[ "$NO_PACKAGES" -eq 1 ]]; then
@@ -74,6 +75,7 @@ fi
 # 2. Symlinks
 log_info "verlinke Dotfiles"
 link_dotfiles
+link_wallpapers
 
 # 3. systemd
 log_info "richte systemd-User-Services ein"

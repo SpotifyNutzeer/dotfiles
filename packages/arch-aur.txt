@@ -1,5 +1,6 @@
 quickshell
 papirus-folders-catppuccin-git
+awww
 # Apps (genutzt, nicht aus Configs abgeleitet)
 brave-beta-bin
 tidal-hifi-tidaluna

@@ -74,6 +74,18 @@ link_item() {
     log_ok "verlinkt: $dst -> $src"
 }
 
+# link_wallpapers — verlinkt die Wallpaper aus dem Repo nach ~/Pictures/Wallpapers/.
+# Erwartet DOTFILES_DIR gesetzt. Nutzt link_item (Konflikt-Handling, idempotent).
+link_wallpapers() {
+    local src_dir="$DOTFILES_DIR/wallpapers"
+    [[ -d "$src_dir" ]] || return 0
+    local wp
+    for wp in "$src_dir"/*; do
+        [[ -e "$wp" ]] || continue
+        link_item "$wp" "$HOME/Pictures/Wallpapers/$(basename "$wp")"
+    done
+}
+
 # link_dotfiles — verlinkt .config/* (außer systemd) und .vimrc.
 # Erwartet DOTFILES_DIR gesetzt.
 link_dotfiles() {

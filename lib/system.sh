@@ -27,3 +27,29 @@ configure_sudo_pwfeedback() {
     rm -f "$tmp"
     log_ok "sudo Passwort-Feedback aktiviert ($dropin)"
 }
+
+# set_default_shell_fish — setzt die Login-Shell des aktuellen Users auf fish.
+# Idempotent; überspringt, wenn fish fehlt oder schon Login-Shell ist.
+set_default_shell_fish() {
+    local fish_path
+    fish_path="$(command -v fish 2>/dev/null)" \
+        || { log_warn "fish nicht gefunden — Shell-Wechsel übersprungen"; return 0; }
+
+    local current
+    current="$(getent passwd "$USER" | cut -d: -f7)"
+    if [[ "$current" == "$fish_path" ]]; then
+        log_ok "Login-Shell ist bereits fish"
+        return 0
+    fi
+
+    if [[ "$DRY_RUN" -eq 1 ]]; then
+        log_info "[dry-run] /etc/shells ergänzen + chsh -s $fish_path $USER"
+        return 0
+    fi
+
+    # fish muss in /etc/shells stehen, sonst lehnt chsh ab.
+    grep -qx "$fish_path" /etc/shells 2>/dev/null \
+        || sudo sh -c "echo '$fish_path' >> /etc/shells"
+    sudo chsh -s "$fish_path" "$USER"
+    log_ok "Login-Shell auf fish gesetzt ($fish_path)"
+}
