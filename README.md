@@ -33,7 +33,13 @@ Der Installer:
    `PreserveVideoMemoryAllocations`) und — auf X3D-CPUs — die automatische
    CCD-Umschaltung: gamemode schaltet beim Spielstart aufs Cache-CCD und
    danach zurück (`/usr/local/bin/x3d-mode` + visudo-validiertes
-   sudoers-Drop-in, Hooks in `.config/gamemode.ini`),
+   sudoers-Drop-in, Hooks in `.config/gamemode.ini`). Außerdem startet Steam
+   über einen Env-Wrapper (`bin/steam` → `~/.local/bin/steam` +
+   steam.desktop-Override), der die Proton-Defaults aus
+   `.config/steam-env.conf` lädt (Wayland/HDR, DLSS-Upgrade, ntsync,
+   vkd3d-Descriptor-Heap, MangoHud, …) — als Launch-Option pro Spiel bleibt
+   nur `gamemoderun %command%` bzw. die gamescope-Vorlage in
+   `launchsteamgame.sh`. proton-cachyos selbst kommt über protonup-qt,
 1. (c) trägt ksshaskpass als grafischen sudo-Askpass-Helper in
    `/etc/sudo.conf` ein (`sudo -A` funktioniert dann auch ohne Terminal),
 2. verlinkt `.config/*` und `.vimrc` ins Home sowie die Wallpaper aus

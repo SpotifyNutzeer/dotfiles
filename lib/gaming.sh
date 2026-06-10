@@ -88,6 +88,40 @@ setup_x3d_gamemode() {
     log_ok "X3D-Umschaltung via gamemode eingerichtet ($dropin)"
 }
 
+# _apply_steam_desktop_edit <src> <dest> <wrapper> — generiert eine
+# steam.desktop, deren Exec-Zeilen statt /usr/bin/steam den Wrapper starten.
+# Reine Funktion -> testbar.
+_apply_steam_desktop_edit() {
+    local src="$1" dest="$2" wrapper="$3"
+    sed "s|^Exec=/usr/bin/steam|Exec=$wrapper|" "$src" > "$dest"
+}
+
+# setup_steam_env — Steam über den Env-Wrapper starten lassen: bin/steam nach
+# ~/.local/bin verlinken (steht vor /usr/bin im PATH) und steam.desktop nach
+# ~/.local/share/applications überschreiben, damit auch Launcher-Starts den
+# Wrapper nutzen. Der Wrapper lädt ~/.config/steam-env.conf (Symlink aus
+# .config/) — alle Spiele erben die Gaming-Env-Defaults. Kein sudo nötig.
+setup_steam_env() {
+    local wrapper="$HOME/.local/bin/steam"
+
+    run mkdir -p "$HOME/.local/bin"
+    run ln -sfn "$DOTFILES_DIR/bin/steam" "$wrapper"
+
+    local src="/usr/share/applications/steam.desktop"
+    if [[ ! -f "$src" ]]; then
+        log_info "steam.desktop nicht gefunden — Desktop-Override übersprungen"
+        return 0
+    fi
+    if [[ "$DRY_RUN" -eq 1 ]]; then
+        log_info "[dry-run] steam.desktop-Override mit Exec=$wrapper generieren"
+        return 0
+    fi
+    mkdir -p "$HOME/.local/share/applications"
+    _apply_steam_desktop_edit "$src" \
+        "$HOME/.local/share/applications/steam.desktop" "$wrapper"
+    log_ok "Steam-Env-Wrapper aktiv ($wrapper + steam.desktop-Override)"
+}
+
 # setup_gaming <distro> — Dispatcher. Der Hyprland/Gaming-Stack ist nur auf
 # Arch paketiert; anderswo wird übersprungen.
 setup_gaming() {
@@ -95,6 +129,7 @@ setup_gaming() {
         arch)
             setup_gaming_system
             setup_x3d_gamemode
+            setup_steam_env
             ;;
         *)  log_info "Gaming-Tuning nur auf Arch — übersprungen" ;;
     esac

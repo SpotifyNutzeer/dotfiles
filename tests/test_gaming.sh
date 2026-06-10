@@ -55,6 +55,36 @@ assert_contains "$nvidia_pkgs" "lib32-nvidia-utils" \
 assert_contains "$nvidia_pkgs" "nvidia-open-dkms" \
     "arch-nvidia.txt enthält nvidia-open-dkms"
 
+# --- steam-Wrapper: exportiert die Env-Defaults und startet STEAM_BIN ---
+mkdir -p "$tmp/conf"
+printf 'MANGOHUD=1\nVKD3D_CONFIG=descriptor_heap\n' > "$tmp/conf/steam-env.conf"
+cat > "$tmp/fake-steam" <<'EOF'
+#!/bin/sh
+echo "MANGOHUD=$MANGOHUD VKD3D_CONFIG=$VKD3D_CONFIG ARGS=$*"
+EOF
+chmod +x "$tmp/fake-steam"
+
+out="$(XDG_CONFIG_HOME="$tmp/conf" STEAM_BIN="$tmp/fake-steam" sh ../bin/steam -foreground)"
+assert_eq "$out" "MANGOHUD=1 VKD3D_CONFIG=descriptor_heap ARGS=-foreground" \
+    "steam-Wrapper exportiert Env-Defaults und reicht Argumente durch"
+
+out="$(XDG_CONFIG_HOME="$tmp/leer" STEAM_BIN="$tmp/fake-steam" sh ../bin/steam)"
+assert_eq "$out" "MANGOHUD= VKD3D_CONFIG= ARGS=" \
+    "steam-Wrapper funktioniert auch ohne steam-env.conf"
+
+# --- steam.desktop-Override: alle Exec-Zeilen zeigen auf den Wrapper ---
+cat > "$tmp/steam.desktop" <<'EOF'
+[Desktop Entry]
+Exec=/usr/bin/steam %U
+[Desktop Action Store]
+Exec=/usr/bin/steam steam://store
+EOF
+_apply_steam_desktop_edit "$tmp/steam.desktop" "$tmp/steam-override.desktop" /home/x/.local/bin/steam
+assert_eq "$(grep -c '^Exec=/home/x/.local/bin/steam' "$tmp/steam-override.desktop")" "2" \
+    "_apply_steam_desktop_edit ersetzt alle Exec-Zeilen"
+assert_eq "$(grep -c '^Exec=/usr/bin/steam' "$tmp/steam-override.desktop")" "0" \
+    "_apply_steam_desktop_edit lässt kein /usr/bin/steam-Exec übrig"
+
 # --- gamemode.ini referenziert den installierten x3d-mode-Pfad ---
 gm="$(cat ../.config/gamemode.ini)"
 assert_contains "$gm" "/usr/local/bin/x3d-mode cache" \
