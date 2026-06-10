@@ -118,6 +118,9 @@ install_packages_arch() {
         run sudo pacman -S --needed --noconfirm "${pacman_list[@]}"
     fi
 
+    # NVIDIA-Stack nur bei erkannter NVIDIA-GPU (lib/gaming.sh).
+    install_nvidia_packages_arch
+
     if [[ "${#aur_list[@]}" -gt 0 ]]; then
         if _ensure_yay; then
             log_info "installiere AUR-Pakete (${#aur_list[@]})"

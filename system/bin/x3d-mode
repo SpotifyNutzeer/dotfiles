@@ -1,0 +1,27 @@
+#!/bin/sh
+# x3d-mode <cache|frequency> — schaltet das bevorzugte CCD eines AMD
+# X3D-Prozessors um (3D-V-Cache- vs. Frequenz-CCD). Spiele profitieren vom
+# Cache-CCD, Desktop-/Build-Last vom Frequenz-CCD; gamemode ruft das Skript
+# bei Spielstart/-ende via sudo auf (root nötig für den sysfs-Schreibzugriff).
+set -eu
+
+mode="${1:-}"
+case "$mode" in
+    cache|frequency) ;;
+    *) echo "Usage: x3d-mode <cache|frequency>" >&2; exit 1 ;;
+esac
+
+# Pfad übersteuerbar, damit das Skript ohne echte Hardware testbar ist.
+sysfs="${X3D_SYSFS:-/sys/bus/platform/drivers/amd_x3d_vcache}"
+
+found=0
+for f in "$sysfs"/*/amd_x3d_mode; do
+    [ -e "$f" ] || continue
+    printf '%s' "$mode" > "$f"
+    found=1
+done
+
+if [ "$found" -eq 0 ]; then
+    echo "x3d-mode: kein amd_x3d_vcache-Gerät unter $sysfs gefunden" >&2
+    exit 1
+fi

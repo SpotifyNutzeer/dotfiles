@@ -41,6 +41,7 @@ export DRY_RUN
 source "$DOTFILES_DIR/lib/common.sh"
 source "$DOTFILES_DIR/lib/system.sh"
 source "$DOTFILES_DIR/lib/packages.sh"
+source "$DOTFILES_DIR/lib/gaming.sh"
 source "$DOTFILES_DIR/lib/symlinks.sh"
 source "$DOTFILES_DIR/lib/systemd.sh"
 source "$DOTFILES_DIR/lib/fisher.sh"
@@ -72,7 +73,10 @@ else
     install_packages "$DETECTED_DISTRO"
 fi
 
-# 1b. Login-Shell auf fish — NACH der Paketinstallation, da fish hier erst
+# 1b. Gaming-/Performance-Tuning (zram, MangoHud-RAPL, NVIDIA-modprobe, X3D)
+setup_gaming "$DETECTED_DISTRO"
+
+# 1c. Login-Shell auf fish — NACH der Paketinstallation, da fish hier erst
 #     installiert wird (sonst würde der Schritt sich mangels fish überspringen).
 set_default_shell_fish
 

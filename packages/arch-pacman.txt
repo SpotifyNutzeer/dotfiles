@@ -20,6 +20,16 @@ cava
 mangohud
 brightnessctl
 playerctl
+# Gaming
+steam
+steam-devices
+gamemode
+lib32-gamemode
+gamescope
+wine
+winetricks
+vulkan-tools
+zram-generator
 # Fonts & Icons
 ttf-jetbrains-mono-nerd
 papirus-icon-theme
