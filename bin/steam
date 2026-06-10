@@ -1,0 +1,13 @@
+#!/bin/sh
+# Steam-Wrapper: lädt die Gaming-Env-Defaults aus ~/.config/steam-env.conf,
+# bevor das echte Steam startet — alle Spiele erben die Variablen. Liegt via
+# Symlink in ~/.local/bin (vor /usr/bin im PATH) und wird auch vom
+# steam.desktop-Override in ~/.local/share/applications genutzt.
+conf="${XDG_CONFIG_HOME:-$HOME/.config}/steam-env.conf"
+if [ -r "$conf" ]; then
+    set -a
+    # shellcheck disable=SC1090
+    . "$conf"
+    set +a
+fi
+exec "${STEAM_BIN:-/usr/bin/steam}" "$@"

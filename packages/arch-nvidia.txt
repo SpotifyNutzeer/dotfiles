@@ -1,0 +1,8 @@
+# NVIDIA-Stack — wird nur installiert, wenn lspci eine NVIDIA-GPU meldet
+# (lib/gaming.sh: install_nvidia_packages_arch).
+nvidia-open-dkms
+nvidia-utils
+lib32-nvidia-utils    # 32-bit-Vulkan/GL — ohne das scheitern 32-bit-Spiele
+opencl-nvidia
+libva-nvidia-driver   # VA-API-Bridge (Hardware-Video-Decode in Browsern)
+linux-zen-headers     # dkms baut das Kernel-Modul gegen die Headers

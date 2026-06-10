@@ -21,9 +21,27 @@ Der Installer:
    `multilib`; mit Backup), synchronisiert die Paket-DBs und installiert die
    Pakete aus `packages/` (`pacman` + AUR via `yay`, das bei Bedarf
    gebootstrappt wird). Die App-Pakete (discord, brave-beta-bin,
-   tidal-hifi-tidaluna, vencord-hook) stehen in den `arch-*`-Listen. Sofern
+   tidal-hifi-tidaluna, vencord-hook) stehen in den `arch-*`-Listen; der
+   Gaming-Stack (steam, gamemode, gamescope, wine, proton-ge, …) ebenso. Der
+   NVIDIA-Stack aus `packages/arch-nvidia.txt` (inkl. `lib32-nvidia-utils`)
+   wird nur installiert, wenn `lspci` eine NVIDIA-GPU meldet. Sofern
    kein anderer Display-Manager vorhanden ist, wird SDDM installiert, mit dem
    Catppuccin-Theme (aus `system/sddm.conf.d/`) konfiguriert und aktiviert,
+1. (b) richtet auf Arch das Gaming-/Performance-Tuning aus `system/` ein:
+   zram (`zram-generator.conf` + sysctl-Swap-Tuning, sofort aktiv), udev-Regel
+   für CPU-Power-Anzeige in MangoHud, NVIDIA-modprobe-Optionen (KMS,
+   `PreserveVideoMemoryAllocations`) und — auf X3D-CPUs — die automatische
+   CCD-Umschaltung: gamemode schaltet beim Spielstart aufs Cache-CCD und
+   danach zurück (`/usr/local/bin/x3d-mode` + visudo-validiertes
+   sudoers-Drop-in, Hooks in `.config/gamemode.ini`). Außerdem startet Steam
+   über einen Env-Wrapper (`bin/steam` → `~/.local/bin/steam` +
+   steam.desktop-Override), der die Proton-Defaults aus
+   `.config/steam-env.conf` lädt (Wayland/HDR, DLSS-Upgrade, ntsync,
+   vkd3d-Descriptor-Heap, MangoHud, …) — als Launch-Option pro Spiel bleibt
+   nur `gamemoderun %command%` bzw. die gamescope-Vorlage in
+   `launchsteamgame.sh`. proton-cachyos selbst kommt über protonup-qt,
+1. (c) trägt ksshaskpass als grafischen sudo-Askpass-Helper in
+   `/etc/sudo.conf` ein (`sudo -A` funktioniert dann auch ohne Terminal),
 2. verlinkt `.config/*` und `.vimrc` ins Home sowie die Wallpaper aus
    `wallpapers/` nach `~/Pictures/Wallpapers/` (bei Konflikten wird interaktiv
    gefragt: Backup / skip / overwrite),
