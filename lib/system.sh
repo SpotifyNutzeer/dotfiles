@@ -28,6 +28,39 @@ configure_sudo_pwfeedback() {
     log_ok "sudo Passwort-Feedback aktiviert ($dropin)"
 }
 
+# _apply_askpass_edit <conf> <helper> — trägt 'Path askpass <helper>' in die
+# gegebene sudo.conf ein, sofern noch kein askpass konfiguriert ist.
+# Idempotent, reine Funktion -> testbar ohne sudo.
+_apply_askpass_edit() {
+    local conf="$1" helper="$2"
+    grep -q '^Path askpass ' "$conf" 2>/dev/null && return 0
+    printf 'Path askpass %s\n' "$helper" >> "$conf"
+}
+
+# configure_sudo_askpass — richtet ksshaskpass als grafischen Askpass-Helper
+# für sudo ein (/etc/sudo.conf). Damit funktioniert 'sudo -A' auch ohne
+# Terminal (z.B. aus GUI-Tools oder nicht-interaktiven Shells heraus).
+configure_sudo_askpass() {
+    local conf="/etc/sudo.conf" helper="/usr/bin/ksshaskpass"
+
+    if [[ ! -x "$helper" ]]; then
+        log_info "ksshaskpass nicht installiert — sudo askpass übersprungen"
+        return 0
+    fi
+    if grep -q '^Path askpass ' "$conf" 2>/dev/null; then
+        log_ok "sudo askpass bereits konfiguriert"
+        return 0
+    fi
+    if [[ "$DRY_RUN" -eq 1 ]]; then
+        log_info "[dry-run] 'Path askpass $helper' in $conf eintragen"
+        return 0
+    fi
+
+    # Funktion in eine root-Shell exportieren (Muster wie _apply_pacman_edits).
+    sudo bash -c "$(declare -f _apply_askpass_edit); _apply_askpass_edit '$conf' '$helper'"
+    log_ok "sudo askpass konfiguriert ($helper) — grafischer Dialog via 'sudo -A'"
+}
+
 # set_default_shell_fish — setzt die Login-Shell des aktuellen Users auf fish.
 # Idempotent; überspringt, wenn fish fehlt oder schon Login-Shell ist.
 set_default_shell_fish() {

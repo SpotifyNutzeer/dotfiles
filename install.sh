@@ -76,7 +76,11 @@ fi
 # 1b. Gaming-/Performance-Tuning (zram, MangoHud-RAPL, NVIDIA-modprobe, X3D)
 setup_gaming "$DETECTED_DISTRO"
 
-# 1c. Login-Shell auf fish — NACH der Paketinstallation, da fish hier erst
+# 1c. ksshaskpass als sudo-Askpass-Helper — NACH den Paketen, da ksshaskpass
+#     dort installiert wird. Ermöglicht 'sudo -A' ohne Terminal (GUI-Dialog).
+configure_sudo_askpass
+
+# 1d. Login-Shell auf fish — NACH der Paketinstallation, da fish hier erst
 #     installiert wird (sonst würde der Schritt sich mangels fish überspringen).
 set_default_shell_fish
 

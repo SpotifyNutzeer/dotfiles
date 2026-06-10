@@ -20,6 +20,7 @@ cava
 mangohud
 brightnessctl
 playerctl
+ksshaskpass    # grafischer sudo-Askpass-Helper (sudo -A), siehe lib/system.sh
 # Gaming
 steam
 steam-devices

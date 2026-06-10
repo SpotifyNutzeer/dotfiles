@@ -34,6 +34,8 @@ Der Installer:
    CCD-Umschaltung: gamemode schaltet beim Spielstart aufs Cache-CCD und
    danach zurück (`/usr/local/bin/x3d-mode` + visudo-validiertes
    sudoers-Drop-in, Hooks in `.config/gamemode.ini`),
+1. (c) trägt ksshaskpass als grafischen sudo-Askpass-Helper in
+   `/etc/sudo.conf` ein (`sudo -A` funktioniert dann auch ohne Terminal),
 2. verlinkt `.config/*` und `.vimrc` ins Home sowie die Wallpaper aus
    `wallpapers/` nach `~/Pictures/Wallpapers/` (bei Konflikten wird interaktiv
    gefragt: Backup / skip / overwrite),
