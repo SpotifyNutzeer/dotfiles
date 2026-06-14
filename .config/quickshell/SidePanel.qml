@@ -9,6 +9,8 @@ import QtQuick.Controls
 PanelWindow {
     id: panel
     property bool panelOpen: false
+    // Geteilter NotificationServer (Owner: shell.qml) — speist Verlauf + Popups.
+    property var notifServer
     signal closeRequested()
 
     // ── Catppuccin Mocha ──────────────────────────────────────────────────────
@@ -100,9 +102,6 @@ PanelWindow {
             if (list[i].identity?.toLowerCase().includes("tidal")) return list[i]
         return list.length > 0 ? list[0] : null
     }
-
-    // ── Notifications ─────────────────────────────────────────────────────────
-    NotificationServer { id: notifServer }
 
     // ── Layout ────────────────────────────────────────────────────────────────
     Item {
@@ -444,7 +443,7 @@ PanelWindow {
                                 font { pixelSize: 14; family: "JetBrainsMono Nerd Font" }
                                 MouseArea {
                                     anchors.fill: parent; cursorShape: Qt.PointingHandCursor
-                                    onClicked: modelData.close()
+                                    onClicked: modelData.dismiss()
                                 }
                             }
                         }

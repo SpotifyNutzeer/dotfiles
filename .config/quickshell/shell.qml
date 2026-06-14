@@ -1,5 +1,6 @@
 //@ pragma UseQApplication
 import Quickshell
+import Quickshell.Services.Notifications
 import QtQuick
 
 ShellRoot {
@@ -8,6 +9,21 @@ ShellRoot {
     property bool sidePanelOpen:  false
     property bool statsOpen:      false
     property bool musicOpen:      false
+
+    // ── Notifications ───────────────────────────────────────────────────────────
+    // Einziger Server (besitzt org.freedesktop.Notifications). Eingehende
+    // Notifications müssen explizit getrackt werden, sonst werden sie sofort
+    // verworfen. trackedNotifications speist SidePanel-Verlauf + Popups.
+    NotificationServer {
+        id: notifServer
+        keepOnReload: true
+        persistenceSupported: true
+        bodySupported: true
+        bodyMarkupSupported: true
+        imageSupported: true
+        actionsSupported: false
+        onNotification: (notification) => { notification.tracked = true }
+    }
 
     Bar {
         id: mainBar
@@ -18,7 +34,13 @@ ShellRoot {
 
     SidePanel {
         panelOpen: root.sidePanelOpen
+        notifServer: notifServer
         onCloseRequested: root.sidePanelOpen = false
+    }
+
+    NotificationPopup {
+        notifServer: notifServer
+        barScreen:   mainBar.screen
     }
 
     StatsOverlay {
