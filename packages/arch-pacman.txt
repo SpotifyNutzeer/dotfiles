@@ -9,6 +9,8 @@ vim
 # Wayland / Hyprland
 hyprland
 hyprpolkitagent
+uwsm                          # systemd-managed Session: aktiviert graphical-session.target (Pflicht für xdg-desktop-portal)
+xdg-desktop-portal-hyprland   # ScreenCast-Portal (Bildschirmteilen) + hyprland-share-picker
 # Audio
 pipewire
 pipewire-pulse

@@ -60,6 +60,37 @@ _other_dm_present() {
     return 1
 }
 
+# _seed_sddm_default_session — wählt die uwsm-managte Hyprland-Session als Default
+# für den ERSTEN Login vor, indem SDDMs state.conf vorbefüllt wird. uwsm startet
+# graphical-session.target, ohne das xdg-desktop-portal nicht hochkommt (kein
+# Bildschirmteilen-Picker). Idempotent: eine bereits vorhandene state.conf (= vom
+# Nutzer getroffene Wahl) wird NICHT überschrieben. SDDM pflegt die Datei danach
+# selbst weiter (als root, mode 644), daher legen wir sie genauso an.
+_seed_sddm_default_session() {
+    local state="/var/lib/sddm/state.conf"
+    local session="/usr/share/wayland-sessions/hyprland-uwsm.desktop"
+    local user; user="$(id -un)"
+
+    # Session-Datei kommt mit dem hyprland-Paket; fehlt sie, bringt das Vorwählen nichts.
+    [[ -f "$session" ]] || { log_warn "$session fehlt — uwsm-Default-Session übersprungen"; return 0; }
+
+    if sudo test -f "$state"; then
+        log_info "SDDM state.conf existiert bereits — Default-Session unverändert gelassen"
+        return 0
+    fi
+
+    if [[ "$DRY_RUN" -eq 1 ]]; then
+        log_info "[dry-run] $state anlegen: Default-Session = hyprland-uwsm (User $user)"
+        return 0
+    fi
+
+    local tmp; tmp="$(mktemp)"
+    printf '[Last]\nUser=%s\nSession=%s\n' "$user" "$session" > "$tmp"
+    sudo install -Dm 644 -o root -g root "$tmp" "$state"
+    rm -f "$tmp"
+    log_ok "SDDM-Default-Session auf hyprland-uwsm gesetzt (greift beim ersten Login)"
+}
+
 # setup_sddm — installiert + konfiguriert SDDM, sofern kein anderer DM vorhanden
 # ist. Idempotent. Setzt voraus, dass _ensure_yay nutzbar ist.
 setup_sddm() {
@@ -79,6 +110,7 @@ setup_sddm() {
     [[ -f "$src" ]] && run sudo install -Dm 644 "$src" /etc/sddm.conf.d/theme.conf
 
     run sudo systemctl enable sddm.service
+    _seed_sddm_default_session
     log_ok "SDDM aktiviert"
 }
 
