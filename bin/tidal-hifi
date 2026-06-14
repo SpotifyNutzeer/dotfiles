@@ -1,0 +1,15 @@
+#!/bin/sh
+# Wrapper für tidal-hifi (TidaLuna). Liegt via Symlink in ~/.local/bin (vor
+# /usr/bin im PATH) und wird auch vom tidal-hifi.desktop-Override in
+# ~/.local/share/applications genutzt — analog zum Steam-Env-Wrapper (bin/steam).
+#
+# --password-store=gnome-libsecret : nagelt Electron-safeStorage auf den
+#   entsperrten gnome-keyring (org.freedesktop.secrets) fest. Sonst wählt 'auto'
+#   unter Hyprland inkonsistent ein Backend, der luna-trust-store.enc wird nicht
+#   mehr entschlüsselt und TidaLuna fragt bei JEDEM Start neu nach Plugin-
+#   Permissions. ('basic' liefert auf Electron 41 isEncryptionAvailable()=false.)
+#
+# Wayland-Flags kommen aus tidal-hifi.desktop (dort wird der Upstream-Exec geerbt),
+# daher hier bewusst NICHT dupliziert. Terminal-Starts laufen damit ohne die
+# Wayland-Flags (XWayland) — wie schon vor diesem Wrapper.
+exec /opt/tidal-hifi/tidal-hifi --password-store=gnome-libsecret "$@"

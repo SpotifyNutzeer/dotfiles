@@ -46,6 +46,7 @@ source "$DOTFILES_DIR/lib/symlinks.sh"
 source "$DOTFILES_DIR/lib/systemd.sh"
 source "$DOTFILES_DIR/lib/fisher.sh"
 source "$DOTFILES_DIR/lib/vim.sh"
+source "$DOTFILES_DIR/lib/apps.sh"
 
 # Distro bestimmen
 if [[ -n "$DISTRO_OVERRIDE" ]]; then
@@ -100,6 +101,10 @@ setup_fisher
 # 5. vim-plug
 log_info "richte vim-Plugins ein"
 setup_vim_plug
+
+# 5b. App-Integrationen (Wrapper + .desktop-Overrides, no-op falls App fehlt)
+log_info "richte App-Wrapper ein"
+setup_tidaluna_env
 
 # 6. Abschluss-Hinweise
 cat >&2 <<'EOF'
