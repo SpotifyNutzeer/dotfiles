@@ -1,6 +1,7 @@
 //@ pragma UseQApplication
 import Quickshell
 import Quickshell.Services.Notifications
+import Quickshell.Io
 import QtQuick
 
 ShellRoot {
@@ -23,6 +24,14 @@ ShellRoot {
         imageSupported: true
         actionsSupported: false
         onNotification: (notification) => { notification.tracked = true }
+    }
+
+    // ── Theme-Umschaltung via IPC ───────────────────────────────────────────────
+    // qs ipc call theme toggle   /   qs ipc call theme setVariant liquidglass
+    IpcHandler {
+        target: "theme"
+        function toggle(): void { Theme.toggle() }
+        function setVariant(name: string): void { Theme.setVariant(name) }
     }
 
     Bar {
