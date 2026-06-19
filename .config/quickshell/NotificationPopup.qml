@@ -63,7 +63,7 @@ PanelWindow {
                 width: col.width
                 height: row.implicitHeight + 20
                 radius: Theme.radius
-                color: Theme.panelBg
+                color: Theme.panelBgDeep
                 border.width: 1
                 border.color: toast.critical ? Theme.clrRed : Theme.borderColor(0.3)
 

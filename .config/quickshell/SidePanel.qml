@@ -97,7 +97,7 @@ PanelWindow {
             height: parent.height
             x: panel.panelOpen ? 0 : -parent.width
             Behavior on x { NumberAnimation { duration: 300; easing.type: Easing.OutCubic } }
-            color: Theme.panelBg
+            color: Theme.panelBgDeep
             radius: 16
             border { color: Theme.borderColor(0.15); width: 1 }
 

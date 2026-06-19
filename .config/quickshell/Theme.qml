@@ -50,20 +50,23 @@ Singleton {
     // Aqua-getönte, durchscheinende Glasfläche (statt reinem Weiß) – wirkt erst
     // mit Compositor-Blur als frosted Glass.
     readonly property color panelBg: glass ? Qt.rgba(0.45, 0.80, 0.85, 0.32) : "#1e1e2e"
+    // Tiefere Variante für Panels, die im Mocha-Look auf clrMantle saßen
+    // (SidePanel, Notification). Im Glas-Look identisch zu panelBg.
+    readonly property color panelBgDeep: glass ? Qt.rgba(0.45, 0.80, 0.85, 0.32) : "#181825"
     readonly property color rim:     glass ? Qt.rgba(0.70, 0.95, 1.00, 0.25) : "transparent"
     readonly property int   radius:  glass ? 16 : 12
     readonly property color accent:  glass ? "#88d8ff" : "#89dceb"
 
     // ── Semantische Palette (Namen wie im Altcode) ───────────────────
     readonly property color clrBase:     glass ? "#0b0814"            : "#1e1e2e"
-    readonly property color clrMantle:   glass ? Qt.rgba(1,1,1,0.04)  : "#181825"
+
     readonly property color clrSurface0: glass ? Qt.rgba(0.45,0.80,0.85,0.26) : "#313244"
     readonly property color clrSurface1: glass ? Qt.rgba(0.55,0.88,0.92,0.18) : "#45475a"
     readonly property color clrText:     glass ? Qt.rgba(1,1,1,0.94)  : "#cdd6f4"
     readonly property color clrSubtext0: glass ? Qt.rgba(1,1,1,0.62)  : "#a6adc8"
     readonly property color clrSubtext1: glass ? Qt.rgba(1,1,1,0.78)  : "#bac2de"
     readonly property color clrBlue:     glass ? "#9cd2ff"            : "#89b4fa"
-    readonly property color clrLavender: glass ? "#c9d2ff"            : "#b4befe"
+
     readonly property color clrGreen:    glass ? "#86efac"            : "#a6e3a1"
     readonly property color clrYellow:   glass ? "#fde68a"            : "#f9e2af"
     readonly property color clrPeach:    glass ? "#fdba74"            : "#fab387"
