@@ -40,21 +40,25 @@ Singleton {
     }
 
     // ── Glas-spezifische Token ───────────────────────────────────────
+    // Im Glas-Look bleibt die Border in der Sky/Aqua-Tönung des Mocha-Themes,
+    // aber deutlich weicher (Alpha ~0.4×), damit sie nicht dominiert.
     function borderColor(a) {
-        return glass ? Qt.rgba(1, 1, 1, a)
+        return glass ? Qt.rgba(0.537, 0.863, 0.922, a * 0.4)
                      : Qt.rgba(0.537, 0.863, 0.922, a)
     }
 
-    readonly property color panelBg: glass ? Qt.rgba(1, 1, 1, 0.06) : "#1e1e2e"
-    readonly property color rim:     glass ? Qt.rgba(1, 1, 1, 0.32) : "transparent"
+    // Aqua-getönte, durchscheinende Glasfläche (statt reinem Weiß) – wirkt erst
+    // mit Compositor-Blur als frosted Glass.
+    readonly property color panelBg: glass ? Qt.rgba(0.45, 0.80, 0.85, 0.12) : "#1e1e2e"
+    readonly property color rim:     glass ? Qt.rgba(0.70, 0.95, 1.00, 0.25) : "transparent"
     readonly property int   radius:  glass ? 16 : 12
     readonly property color accent:  glass ? "#88d8ff" : "#89dceb"
 
     // ── Semantische Palette (Namen wie im Altcode) ───────────────────
     readonly property color clrBase:     glass ? "#0b0814"            : "#1e1e2e"
     readonly property color clrMantle:   glass ? Qt.rgba(1,1,1,0.04)  : "#181825"
-    readonly property color clrSurface0: glass ? Qt.rgba(1,1,1,0.10)  : "#313244"
-    readonly property color clrSurface1: glass ? Qt.rgba(1,1,1,0.16)  : "#45475a"
+    readonly property color clrSurface0: glass ? Qt.rgba(0.45,0.80,0.85,0.10) : "#313244"
+    readonly property color clrSurface1: glass ? Qt.rgba(0.55,0.88,0.92,0.18) : "#45475a"
     readonly property color clrText:     glass ? Qt.rgba(1,1,1,0.94)  : "#cdd6f4"
     readonly property color clrSubtext0: glass ? Qt.rgba(1,1,1,0.62)  : "#a6adc8"
     readonly property color clrSubtext1: glass ? Qt.rgba(1,1,1,0.78)  : "#bac2de"
