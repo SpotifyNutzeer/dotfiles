@@ -43,7 +43,7 @@ Singleton {
     // Im Glas-Look bleibt die Border in der Sky/Aqua-Tönung des Mocha-Themes,
     // aber deutlich weicher (Alpha ~0.4×), damit sie nicht dominiert.
     function borderColor(a) {
-        return glass ? Qt.rgba(0.537, 0.863, 0.922, a * 0.4)
+        return glass ? Qt.rgba(0.537, 0.863, 0.922, a * 0.5)
                      : Qt.rgba(0.537, 0.863, 0.922, a)
     }
 
