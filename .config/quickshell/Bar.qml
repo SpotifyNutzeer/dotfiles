@@ -645,8 +645,8 @@ PanelWindow {
                             radius: 1
                             gradient: Gradient {
                                 orientation: Gradient.Vertical
-                                GradientStop { position: 0.0; color: "#c8eef5" }
-                                GradientStop { position: 1.0; color: Theme.borderColor(0.4) }
+                                GradientStop { position: 0.0; color: Theme.vizBarTop }
+                                GradientStop { position: 1.0; color: Qt.rgba(Theme.clrSky.r, Theme.clrSky.g, Theme.clrSky.b, 0.4) }
                             }
                             Behavior on height { NumberAnimation { duration: 55; easing.type: Easing.OutQuad } }
                         }

@@ -56,6 +56,8 @@ Singleton {
     readonly property color rim:     glass ? Qt.rgba(0.70, 0.95, 1.00, 0.25) : "transparent"
     readonly property int   radius:  glass ? 16 : 12
     readonly property color accent:  glass ? "#88d8ff" : "#89dceb"
+    // Oberer Farbstopp des Audio-Visualizer-Gradienten (heller Sky-Highlight).
+    readonly property color vizBarTop: glass ? Qt.rgba(0.80, 0.96, 1.00, 1.0) : "#c8eef5"
 
     // ── Semantische Palette (Namen wie im Altcode) ───────────────────
     readonly property color clrBase:     glass ? "#0b0814"            : "#1e1e2e"

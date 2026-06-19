@@ -14,7 +14,7 @@ case "$1" in
         CHOICE=$(printf "%s\n%s" "$MOCHA" "$GLASS" \
             | rofi -dmenu \
                 -p "󰸉" \
-                -theme ~/.config/rofi/catppuccin-mocha.rasi \
+                -theme "$HOME/.config/rofi/catppuccin-mocha.rasi" \
                 -theme-str 'window { width: 220px; } listview { lines: 2; }')
         case "$CHOICE" in
             "$MOCHA") qs ipc call theme setVariant mocha ;;
