@@ -158,7 +158,7 @@ PanelWindow {
                             height: 52
                             radius: 12
                             color: modelData.active
-                                   ? Theme.borderColor(0.2)
+                                   ? Qt.rgba(Theme.clrSky.r, Theme.clrSky.g, Theme.clrSky.b, 0.2)
                                    : Theme.clrSurface0
                             border {
                                 color: modelData.active ? Theme.clrSky : "transparent"
