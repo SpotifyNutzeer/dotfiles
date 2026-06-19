@@ -27,16 +27,6 @@ PanelWindow {
     implicitWidth: 380
     implicitHeight: col.implicitHeight
 
-    // ── Catppuccin Mocha (lokal, analog zu den übrigen Komponenten) ─────────────
-    readonly property color clrMantle:   "#181825"
-    readonly property color clrSurface0: "#313244"
-    readonly property color clrSurface1: "#45475a"
-    readonly property color clrText:     "#cdd6f4"
-    readonly property color clrSubtext0: "#a6adc8"
-    readonly property color clrSubtext1: "#bac2de"
-    readonly property color clrSky:      "#89dceb"
-    readonly property color clrRed:      "#f38ba8"
-
     function removePopup(notif) {
         root.popups = root.popups.filter(n => n !== notif)
     }
@@ -72,10 +62,10 @@ PanelWindow {
 
                 width: col.width
                 height: row.implicitHeight + 20
-                radius: 12
-                color: root.clrMantle
+                radius: Theme.radius
+                color: Theme.panelBg
                 border.width: 1
-                border.color: toast.critical ? root.clrRed : Qt.rgba(0.537, 0.863, 0.922, 0.3)
+                border.color: toast.critical ? Theme.clrRed : Theme.borderColor(0.3)
 
                 // Auto-Dismiss des Toasts (nicht des Verlauf-Eintrags).
                 Timer {
@@ -112,21 +102,21 @@ PanelWindow {
 
                         Text {
                             text: toast.modelData.appName !== "" ? toast.modelData.appName : "Notification"
-                            color: toast.critical ? root.clrRed : root.clrSky
+                            color: toast.critical ? Theme.clrRed : Theme.clrSky
                             font { pixelSize: 11; family: "JetBrainsMono Nerd Font" }
                             Layout.fillWidth: true
                             elide: Text.ElideRight
                         }
                         Text {
                             text: toast.modelData.summary
-                            color: root.clrText
+                            color: Theme.clrText
                             font { pixelSize: 14; bold: true; family: "JetBrainsMono Nerd Font" }
                             Layout.fillWidth: true
                             elide: Text.ElideRight
                         }
                         Text {
                             text: toast.modelData.body
-                            color: root.clrSubtext0
+                            color: Theme.clrSubtext0
                             font { pixelSize: 12; family: "JetBrainsMono Nerd Font" }
                             visible: toast.modelData.body !== ""
                             textFormat: Text.StyledText
@@ -139,7 +129,7 @@ PanelWindow {
 
                     Text {
                         text: "󰅖"
-                        color: root.clrSubtext1
+                        color: Theme.clrSubtext1
                         font { pixelSize: 16; family: "JetBrainsMono Nerd Font" }
                         Layout.alignment: Qt.AlignTop
                         MouseArea {
