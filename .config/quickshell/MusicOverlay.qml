@@ -13,16 +13,7 @@ PanelWindow {
     property real trackPosition: 0
     property real trackLength:   0
 
-    // ── Catppuccin Mocha ─────────────────────────────────────────────────────
-    readonly property color clrBase:     "#1e1e2e"
-    readonly property color clrSurface0: "#313244"
-    readonly property color clrSurface1: "#45475a"
-    readonly property color clrText:     "#cdd6f4"
-    readonly property color clrSubtext0: "#a6adc8"
-    readonly property color clrLavender: "#b4befe"
-    readonly property color clrSky:      "#89dceb"
-    readonly property color clrMauve:    "#cba6f7"
-    readonly property string nfFont:     "JetBrainsMono Nerd Font"
+    readonly property string nfFont: "JetBrainsMono Nerd Font"
 
     function fmt(s) {
         if (!s || s <= 0) return "0:00"
@@ -58,9 +49,9 @@ PanelWindow {
         anchors { top: parent.top; bottom: parent.bottom }
         width: Math.max(overlay.islandWidth, 290)
 
-        radius: 12
-        color:  overlay.clrBase
-        border  { color: Qt.rgba(0.537, 0.863, 0.922, 0.55); width: 2 }
+        radius: Theme.radius
+        color:  Theme.panelBg
+        border  { color: Theme.borderColor(0.55); width: 2 }
         clip:   true
         opacity: overlay.musicOpen ? 1.0 : 0.0
         Behavior on opacity { NumberAnimation { duration: 220; easing.type: Easing.InOutQuad } }
@@ -78,7 +69,7 @@ PanelWindow {
                 Rectangle {
                     width: 66; height: 66
                     radius: 8
-                    color: overlay.clrSurface0
+                    color: Theme.clrSurface0
                     clip: true
 
                     Image {
@@ -91,7 +82,7 @@ PanelWindow {
                     Text {
                         anchors.centerIn: parent
                         text: "󰝚"
-                        color: overlay.clrMauve
+                        color: Theme.clrMauve
                         font { family: overlay.nfFont; pixelSize: 26 }
                         visible: albumArt.status !== Image.Ready
                     }
@@ -107,14 +98,14 @@ PanelWindow {
                     Text {
                         Layout.fillWidth: true
                         text: overlay.player ? (overlay.player.trackTitle ?? "–") : "–"
-                        color: overlay.clrText
+                        color: Theme.clrText
                         font { family: overlay.nfFont; pixelSize: 13; bold: true }
                         elide: Text.ElideRight
                     }
                     Text {
                         Layout.fillWidth: true
                         text: overlay.player ? (overlay.player.trackArtist ?? "") : ""
-                        color: overlay.clrSubtext0
+                        color: Theme.clrSubtext0
                         font { family: overlay.nfFont; pixelSize: 12 }
                         elide: Text.ElideRight
                         visible: text.length > 0
@@ -122,8 +113,8 @@ PanelWindow {
                     Text {
                         Layout.fillWidth: true
                         text: overlay.player ? (overlay.player.trackAlbum ?? "") : ""
-                        color: Qt.rgba(overlay.clrSubtext0.r, overlay.clrSubtext0.g,
-                                       overlay.clrSubtext0.b, 0.5)
+                        color: Qt.rgba(Theme.clrSubtext0.r, Theme.clrSubtext0.g,
+                                       Theme.clrSubtext0.b, 0.5)
                         font { family: overlay.nfFont; pixelSize: 11 }
                         elide: Text.ElideRight
                         visible: text.length > 0
@@ -135,13 +126,13 @@ PanelWindow {
                         height: 17
                         width: badgeText.implicitWidth + 12
                         radius: 4
-                        color: Qt.rgba(0.537, 0.863, 0.922, 0.10)
-                        border { color: Qt.rgba(0.537, 0.863, 0.922, 0.25); width: 1 }
+                        color: Qt.rgba(Theme.clrSky.r, Theme.clrSky.g, Theme.clrSky.b, 0.10)
+                        border { color: Theme.borderColor(0.25); width: 1 }
                         Text {
                             id: badgeText
                             anchors.centerIn: parent
                             text: overlay.player ? (overlay.player.identity ?? "") : ""
-                            color: Qt.rgba(0.537, 0.863, 0.922, 0.65)
+                            color: Qt.rgba(Theme.clrSky.r, Theme.clrSky.g, Theme.clrSky.b, 0.65)
                             font { family: overlay.nfFont; pixelSize: 10 }
                         }
                     }
@@ -149,7 +140,7 @@ PanelWindow {
             }
 
             // ── Trennlinie ───────────────────────────────────────────────────
-            Rectangle { Layout.fillWidth: true; height: 1; color: overlay.clrSurface1; opacity: 0.45 }
+            Rectangle { Layout.fillWidth: true; height: 1; color: Theme.clrSurface1; opacity: 0.45 }
 
             // ── Steuerung ────────────────────────────────────────────────────
             RowLayout {
@@ -160,7 +151,7 @@ PanelWindow {
 
                 Text {
                     text: "󰒮"
-                    color: overlay.clrSubtext0
+                    color: Theme.clrSubtext0
                     font { family: overlay.nfFont; pixelSize: 19 }
                     MouseArea {
                         anchors.fill: parent; cursorShape: Qt.PointingHandCursor
@@ -174,7 +165,7 @@ PanelWindow {
                     text: (overlay.player &&
                            overlay.player.playbackState === MprisPlaybackState.Playing)
                           ? "󰏥" : "󰐊"
-                    color: overlay.clrSky
+                    color: Theme.clrSky
                     font { family: overlay.nfFont; pixelSize: 28 }
                     MouseArea {
                         anchors.fill: parent; cursorShape: Qt.PointingHandCursor
@@ -192,7 +183,7 @@ PanelWindow {
 
                 Text {
                     text: "󰒭"
-                    color: overlay.clrSubtext0
+                    color: Theme.clrSubtext0
                     font { family: overlay.nfFont; pixelSize: 19 }
                     MouseArea {
                         anchors.fill: parent; cursorShape: Qt.PointingHandCursor
@@ -210,7 +201,7 @@ PanelWindow {
 
                 Text {
                     text: overlay.fmt(overlay.trackPosition)
-                    color: overlay.clrSubtext0
+                    color: Theme.clrSubtext0
                     font { family: overlay.nfFont; pixelSize: 11 }
                 }
 
@@ -221,14 +212,14 @@ PanelWindow {
 
                     Rectangle {
                         anchors.fill: parent; radius: 3
-                        color: overlay.clrSurface1
+                        color: Theme.clrSurface1
                     }
                     Rectangle {
                         width: overlay.trackLength > 0
                                ? parent.width * Math.min(overlay.trackPosition / overlay.trackLength, 1)
                                : 0
                         height: parent.height; radius: 3
-                        color: overlay.clrSky
+                        color: Theme.clrSky
                     }
                     MouseArea {
                         anchors { fill: parent; margins: -8 }
@@ -244,7 +235,7 @@ PanelWindow {
 
                 Text {
                     text: overlay.fmt(overlay.trackLength)
-                    color: overlay.clrSubtext0
+                    color: Theme.clrSubtext0
                     font { family: overlay.nfFont; pixelSize: 11 }
                 }
             }
