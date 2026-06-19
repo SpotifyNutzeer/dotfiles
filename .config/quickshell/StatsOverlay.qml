@@ -76,23 +76,6 @@ PanelWindow {
             onRead: d => { if (d.trim()) overlay.hostname = d.trim() } }
     }
 
-    // ── Catppuccin Mocha ─────────────────────────────────────────────────────
-    readonly property color clrBase:     "#1e1e2e"
-    readonly property color clrSurface0: "#313244"
-    readonly property color clrSurface1: "#45475a"
-    readonly property color clrText:     "#cdd6f4"
-    readonly property color clrSubtext0: "#a6adc8"
-    readonly property color clrBlue:     "#89b4fa"
-    readonly property color clrLavender: "#b4befe"
-    readonly property color clrGreen:    "#a6e3a1"
-    readonly property color clrYellow:   "#f9e2af"
-    readonly property color clrPeach:    "#fab387"
-    readonly property color clrTeal:     "#94e2d5"
-    readonly property color clrSky:      "#89dceb"
-    readonly property color clrSapphire: "#74c7ec"
-    readonly property color clrMauve:    "#cba6f7"
-    readonly property color clrPink:     "#f5c2e7"
-
     readonly property string nfFont: "JetBrainsMono Nerd Font"
 
     // ── Fenster ──────────────────────────────────────────────────────────────
@@ -114,9 +97,9 @@ PanelWindow {
     Rectangle {
         anchors { top: parent.top; bottom: parent.bottom; horizontalCenter: parent.horizontalCenter }
         width:  overlay.panelWidth
-        radius: 12
-        color:  overlay.clrBase
-        border  { color: Qt.rgba(0.537, 0.863, 0.922, 0.55); width: 2 }
+        radius: Theme.radius
+        color:  Theme.panelBg
+        border  { color: Theme.borderColor(0.55); width: 2 }
         clip:   true
         opacity: overlay.statsOpen ? 1.0 : 0.0
         Behavior on opacity { NumberAnimation { duration: 220; easing.type: Easing.InOutQuad } }
@@ -134,11 +117,11 @@ PanelWindow {
                 // CPU Card
                 Rectangle {
                     Layout.fillWidth: true; Layout.fillHeight: true
-                    color: overlay.clrSurface0; radius: 8
+                    color: Theme.clrSurface0; radius: 8
 
                     Rectangle {
                         anchors { top: parent.top; left: parent.left; right: parent.right }
-                        height: 2; radius: 8; color: overlay.clrGreen
+                        height: 2; radius: 8; color: Theme.clrGreen
                     }
 
                     ColumnLayout {
@@ -147,15 +130,15 @@ PanelWindow {
 
                         RowLayout {
                             spacing: 5
-                            Text { text: "󰻠"; color: overlay.clrGreen
+                            Text { text: "󰻠"; color: Theme.clrGreen
                                 font { family: overlay.nfFont; pixelSize: 12 } }
-                            Text { text: "CPU"; color: overlay.clrGreen
+                            Text { text: "CPU"; color: Theme.clrGreen
                                 font { family: overlay.nfFont; pixelSize: 11; bold: true } }
                         }
 
                         MiniGraph {
                             Layout.fillWidth: true; Layout.fillHeight: true
-                            history: overlay.cpuHistory; lineColor: overlay.clrGreen
+                            history: overlay.cpuHistory; lineColor: Theme.clrGreen
                             maxValue: 100; showLabel: false
                         }
 
@@ -164,20 +147,20 @@ PanelWindow {
                             columns: 2; columnSpacing: 10; rowSpacing: 3
 
                             Row { spacing: 3
-                                Text { text: "󰻠 "; color: overlay.clrGreen;  font { family: overlay.nfFont; pixelSize: 11 } }
-                                Text { text: overlay.cpuUsage + "%"; color: overlay.clrSubtext0; font { family: overlay.nfFont; pixelSize: 11 } }
+                                Text { text: "󰻠 "; color: Theme.clrGreen;  font { family: overlay.nfFont; pixelSize: 11 } }
+                                Text { text: overlay.cpuUsage + "%"; color: Theme.clrSubtext0; font { family: overlay.nfFont; pixelSize: 11 } }
                             }
                             Row { spacing: 3
-                                Text { text: "󰓅 "; color: overlay.clrSky;    font { family: overlay.nfFont; pixelSize: 11 } }
-                                Text { text: overlay.cpuClock;  color: overlay.clrSubtext0; font { family: overlay.nfFont; pixelSize: 11 } }
+                                Text { text: "󰓅 "; color: Theme.clrSky;    font { family: overlay.nfFont; pixelSize: 11 } }
+                                Text { text: overlay.cpuClock;  color: Theme.clrSubtext0; font { family: overlay.nfFont; pixelSize: 11 } }
                             }
                             Row { spacing: 3
-                                Text { text: "󱐋 "; color: overlay.clrPeach;  font { family: overlay.nfFont; pixelSize: 11 } }
-                                Text { text: overlay.cpuPower;  color: overlay.clrSubtext0; font { family: overlay.nfFont; pixelSize: 11 } }
+                                Text { text: "󱐋 "; color: Theme.clrPeach;  font { family: overlay.nfFont; pixelSize: 11 } }
+                                Text { text: overlay.cpuPower;  color: Theme.clrSubtext0; font { family: overlay.nfFont; pixelSize: 11 } }
                             }
                             Row { spacing: 3
-                                Text { text: "󰔏 "; color: overlay.clrYellow; font { family: overlay.nfFont; pixelSize: 11 } }
-                                Text { text: overlay.cpuTemp + "°C"; color: overlay.clrSubtext0; font { family: overlay.nfFont; pixelSize: 11 } }
+                                Text { text: "󰔏 "; color: Theme.clrYellow; font { family: overlay.nfFont; pixelSize: 11 } }
+                                Text { text: overlay.cpuTemp + "°C"; color: Theme.clrSubtext0; font { family: overlay.nfFont; pixelSize: 11 } }
                             }
                         }
                     }
@@ -186,11 +169,11 @@ PanelWindow {
                 // GPU Card
                 Rectangle {
                     Layout.fillWidth: true; Layout.fillHeight: true
-                    color: overlay.clrSurface0; radius: 8
+                    color: Theme.clrSurface0; radius: 8
 
                     Rectangle {
                         anchors { top: parent.top; left: parent.left; right: parent.right }
-                        height: 2; radius: 8; color: overlay.clrTeal
+                        height: 2; radius: 8; color: Theme.clrTeal
                     }
 
                     ColumnLayout {
@@ -199,15 +182,15 @@ PanelWindow {
 
                         RowLayout {
                             spacing: 5
-                            Text { text: "󰢮"; color: overlay.clrTeal
+                            Text { text: "󰢮"; color: Theme.clrTeal
                                 font { family: overlay.nfFont; pixelSize: 12 } }
-                            Text { text: "GPU"; color: overlay.clrTeal
+                            Text { text: "GPU"; color: Theme.clrTeal
                                 font { family: overlay.nfFont; pixelSize: 11; bold: true } }
                         }
 
                         MiniGraph {
                             Layout.fillWidth: true; Layout.fillHeight: true
-                            history: overlay.gpuHistory; lineColor: overlay.clrTeal
+                            history: overlay.gpuHistory; lineColor: Theme.clrTeal
                             maxValue: 100; showLabel: false
                         }
 
@@ -216,24 +199,24 @@ PanelWindow {
                             columns: 3; columnSpacing: 10; rowSpacing: 3
 
                             Row { spacing: 3
-                                Text { text: "󰢮 "; color: overlay.clrTeal;   font { family: overlay.nfFont; pixelSize: 11 } }
-                                Text { text: overlay.gpuUsage + "%"; color: overlay.clrSubtext0; font { family: overlay.nfFont; pixelSize: 11 } }
+                                Text { text: "󰢮 "; color: Theme.clrTeal;   font { family: overlay.nfFont; pixelSize: 11 } }
+                                Text { text: overlay.gpuUsage + "%"; color: Theme.clrSubtext0; font { family: overlay.nfFont; pixelSize: 11 } }
                             }
                             Row { spacing: 3
-                                Text { text: "󰓅 "; color: overlay.clrSky;    font { family: overlay.nfFont; pixelSize: 11 } }
-                                Text { text: overlay.gpuClock;  color: overlay.clrSubtext0; font { family: overlay.nfFont; pixelSize: 11 } }
+                                Text { text: "󰓅 "; color: Theme.clrSky;    font { family: overlay.nfFont; pixelSize: 11 } }
+                                Text { text: overlay.gpuClock;  color: Theme.clrSubtext0; font { family: overlay.nfFont; pixelSize: 11 } }
                             }
                             Row { spacing: 3
-                                Text { text: "󱐋 "; color: overlay.clrPeach;  font { family: overlay.nfFont; pixelSize: 11 } }
-                                Text { text: overlay.gpuPower;  color: overlay.clrSubtext0; font { family: overlay.nfFont; pixelSize: 11 } }
+                                Text { text: "󱐋 "; color: Theme.clrPeach;  font { family: overlay.nfFont; pixelSize: 11 } }
+                                Text { text: overlay.gpuPower;  color: Theme.clrSubtext0; font { family: overlay.nfFont; pixelSize: 11 } }
                             }
                             Row { spacing: 3
-                                Text { text: "󰔏 "; color: overlay.clrYellow; font { family: overlay.nfFont; pixelSize: 11 } }
-                                Text { text: overlay.gpuTemp + "°C"; color: overlay.clrSubtext0; font { family: overlay.nfFont; pixelSize: 11 } }
+                                Text { text: "󰔏 "; color: Theme.clrYellow; font { family: overlay.nfFont; pixelSize: 11 } }
+                                Text { text: overlay.gpuTemp + "°C"; color: Theme.clrSubtext0; font { family: overlay.nfFont; pixelSize: 11 } }
                             }
                             Row { spacing: 3
-                                Text { text: "󰆧 "; color: overlay.clrSky;    font { family: overlay.nfFont; pixelSize: 11 } }
-                                Text { text: overlay.gpuVram;   color: overlay.clrSubtext0; font { family: overlay.nfFont; pixelSize: 11 } }
+                                Text { text: "󰆧 "; color: Theme.clrSky;    font { family: overlay.nfFont; pixelSize: 11 } }
+                                Text { text: overlay.gpuVram;   color: Theme.clrSubtext0; font { family: overlay.nfFont; pixelSize: 11 } }
                             }
                             Item {}
                         }
@@ -243,11 +226,11 @@ PanelWindow {
                 // RAM Card
                 Rectangle {
                     Layout.fillWidth: true; Layout.fillHeight: true
-                    color: overlay.clrSurface0; radius: 8
+                    color: Theme.clrSurface0; radius: 8
 
                     Rectangle {
                         anchors { top: parent.top; left: parent.left; right: parent.right }
-                        height: 2; radius: 8; color: overlay.clrMauve
+                        height: 2; radius: 8; color: Theme.clrMauve
                     }
 
                     ColumnLayout {
@@ -256,21 +239,21 @@ PanelWindow {
 
                         RowLayout {
                             spacing: 5
-                            Text { text: "󰍛"; color: overlay.clrMauve
+                            Text { text: "󰍛"; color: Theme.clrMauve
                                 font { family: overlay.nfFont; pixelSize: 12 } }
-                            Text { text: "RAM"; color: overlay.clrMauve
+                            Text { text: "RAM"; color: Theme.clrMauve
                                 font { family: overlay.nfFont; pixelSize: 11; bold: true } }
                         }
 
                         MiniGraph {
                             Layout.fillWidth: true; Layout.fillHeight: true
-                            history: overlay.ramHistory; lineColor: overlay.clrMauve
+                            history: overlay.ramHistory; lineColor: Theme.clrMauve
                             maxValue: 64; showLabel: false
                         }
 
                         Row { spacing: 3; Layout.alignment: Qt.AlignHCenter
-                            Text { text: "󰍛 "; color: overlay.clrMauve;    font { family: overlay.nfFont; pixelSize: 11 } }
-                            Text { text: overlay.ramUsed + " G"; color: overlay.clrSubtext0; font { family: overlay.nfFont; pixelSize: 11 } }
+                            Text { text: "󰍛 "; color: Theme.clrMauve;    font { family: overlay.nfFont; pixelSize: 11 } }
+                            Text { text: overlay.ramUsed + " G"; color: Theme.clrSubtext0; font { family: overlay.nfFont; pixelSize: 11 } }
                         }
                     }
                 }
@@ -278,11 +261,11 @@ PanelWindow {
                 // NET Card
                 Rectangle {
                     Layout.fillWidth: true; Layout.fillHeight: true
-                    color: overlay.clrSurface0; radius: 8
+                    color: Theme.clrSurface0; radius: 8
 
                     Rectangle {
                         anchors { top: parent.top; left: parent.left; right: parent.right }
-                        height: 2; radius: 8; color: overlay.clrBlue
+                        height: 2; radius: 8; color: Theme.clrBlue
                     }
 
                     ColumnLayout {
@@ -291,15 +274,15 @@ PanelWindow {
 
                         RowLayout {
                             spacing: 5
-                            Text { text: "󰛳"; color: overlay.clrBlue
+                            Text { text: "󰛳"; color: Theme.clrBlue
                                 font { family: overlay.nfFont; pixelSize: 12 } }
-                            Text { text: "Netzwerk"; color: overlay.clrBlue
+                            Text { text: "Netzwerk"; color: Theme.clrBlue
                                 font { family: overlay.nfFont; pixelSize: 11; bold: true } }
                         }
 
                         MiniGraph {
                             Layout.fillWidth: true; Layout.fillHeight: true
-                            history: overlay.netDownHistory; lineColor: overlay.clrBlue
+                            history: overlay.netDownHistory; lineColor: Theme.clrBlue
                             maxValue: overlay.netDownMax; showLabel: false
                         }
 
@@ -307,12 +290,12 @@ PanelWindow {
                             Layout.alignment: Qt.AlignHCenter
                             spacing: 3
                             Row { spacing: 3
-                                Text { text: "󰁆 "; color: overlay.clrBlue;     font { family: overlay.nfFont; pixelSize: 11 } }
-                                Text { text: overlay.netDown; color: overlay.clrSubtext0; font { family: overlay.nfFont; pixelSize: 11 } }
+                                Text { text: "󰁆 "; color: Theme.clrBlue;     font { family: overlay.nfFont; pixelSize: 11 } }
+                                Text { text: overlay.netDown; color: Theme.clrSubtext0; font { family: overlay.nfFont; pixelSize: 11 } }
                             }
                             Row { spacing: 3
-                                Text { text: "󰁞 "; color: overlay.clrSapphire; font { family: overlay.nfFont; pixelSize: 11 } }
-                                Text { text: overlay.netUp;   color: overlay.clrSubtext0; font { family: overlay.nfFont; pixelSize: 11 } }
+                                Text { text: "󰁞 "; color: Theme.clrSapphire; font { family: overlay.nfFont; pixelSize: 11 } }
+                                Text { text: overlay.netUp;   color: Theme.clrSubtext0; font { family: overlay.nfFont; pixelSize: 11 } }
                             }
                         }
                     }
@@ -320,7 +303,7 @@ PanelWindow {
             }
 
             // ── Trennlinie ───────────────────────────────────────────────────
-            Rectangle { Layout.fillWidth: true; height: 1; color: overlay.clrSurface1; opacity: 0.5 }
+            Rectangle { Layout.fillWidth: true; height: 1; color: Theme.clrSurface1; opacity: 0.5 }
 
             // ── Systeminfo-Leiste ────────────────────────────────────────────
             RowLayout {
@@ -329,53 +312,53 @@ PanelWindow {
 
                 // Hostname
                 Row { spacing: 4
-                    Text { text: "󰟀"; color: overlay.clrSky; font { family: overlay.nfFont; pixelSize: 13 } }
-                    Text { text: overlay.hostname; color: overlay.clrText; font { family: overlay.nfFont; pixelSize: 12 } }
+                    Text { text: "󰟀"; color: Theme.clrSky; font { family: overlay.nfFont; pixelSize: 13 } }
+                    Text { text: overlay.hostname; color: Theme.clrText; font { family: overlay.nfFont; pixelSize: 12 } }
                 }
 
-                Rectangle { width: 1; height: 14; color: overlay.clrSurface1; opacity: 0.6
+                Rectangle { width: 1; height: 14; color: Theme.clrSurface1; opacity: 0.6
                     Layout.leftMargin: 10; Layout.rightMargin: 10 }
 
                 // Private IP
                 Row { spacing: 4
-                    Text { text: "󰈀"; color: overlay.clrGreen; font { family: overlay.nfFont; pixelSize: 13 } }
-                    Text { text: overlay.privateIp; color: overlay.clrText; font { family: overlay.nfFont; pixelSize: 12 } }
+                    Text { text: "󰈀"; color: Theme.clrGreen; font { family: overlay.nfFont; pixelSize: 13 } }
+                    Text { text: overlay.privateIp; color: Theme.clrText; font { family: overlay.nfFont; pixelSize: 12 } }
                 }
 
-                Rectangle { width: 1; height: 14; color: overlay.clrSurface1; opacity: 0.6
+                Rectangle { width: 1; height: 14; color: Theme.clrSurface1; opacity: 0.6
                     Layout.leftMargin: 10; Layout.rightMargin: 10 }
 
                 // Public IP
                 Row { spacing: 4
-                    Text { text: "󰀃"; color: overlay.clrBlue; font { family: overlay.nfFont; pixelSize: 13 } }
-                    Text { text: overlay.publicIp; color: overlay.clrText; font { family: overlay.nfFont; pixelSize: 12 } }
+                    Text { text: "󰀃"; color: Theme.clrBlue; font { family: overlay.nfFont; pixelSize: 13 } }
+                    Text { text: overlay.publicIp; color: Theme.clrText; font { family: overlay.nfFont; pixelSize: 12 } }
                 }
 
-                Rectangle { width: 1; height: 14; color: overlay.clrSurface1; opacity: 0.6
+                Rectangle { width: 1; height: 14; color: Theme.clrSurface1; opacity: 0.6
                     Layout.leftMargin: 10; Layout.rightMargin: 10 }
 
                 // Kerne
                 Row { spacing: 4
-                    Text { text: "󰘚"; color: overlay.clrTeal; font { family: overlay.nfFont; pixelSize: 13 } }
-                    Text { text: overlay.coreCount + " Cores"; color: overlay.clrText; font { family: overlay.nfFont; pixelSize: 12 } }
+                    Text { text: "󰘚"; color: Theme.clrTeal; font { family: overlay.nfFont; pixelSize: 13 } }
+                    Text { text: overlay.coreCount + " Cores"; color: Theme.clrText; font { family: overlay.nfFont; pixelSize: 12 } }
                 }
 
-                Rectangle { width: 1; height: 14; color: overlay.clrSurface1; opacity: 0.6
+                Rectangle { width: 1; height: 14; color: Theme.clrSurface1; opacity: 0.6
                     Layout.leftMargin: 10; Layout.rightMargin: 10 }
 
                 // Kernel
                 Row { spacing: 4
-                    Text { text: "󰌽"; color: overlay.clrPeach; font { family: overlay.nfFont; pixelSize: 13 } }
-                    Text { text: overlay.kernelVer; color: overlay.clrText; font { family: overlay.nfFont; pixelSize: 12 } }
+                    Text { text: "󰌽"; color: Theme.clrPeach; font { family: overlay.nfFont; pixelSize: 13 } }
+                    Text { text: overlay.kernelVer; color: Theme.clrText; font { family: overlay.nfFont; pixelSize: 12 } }
                 }
 
-                Rectangle { width: 1; height: 14; color: overlay.clrSurface1; opacity: 0.6
+                Rectangle { width: 1; height: 14; color: Theme.clrSurface1; opacity: 0.6
                     Layout.leftMargin: 10; Layout.rightMargin: 10 }
 
                 // Uptime
                 Row { spacing: 4
-                    Text { text: "󰔟"; color: overlay.clrPink; font { family: overlay.nfFont; pixelSize: 13 } }
-                    Text { text: overlay.uptimeStr; color: overlay.clrText; font { family: overlay.nfFont; pixelSize: 12 } }
+                    Text { text: "󰔟"; color: Theme.clrPink; font { family: overlay.nfFont; pixelSize: 13 } }
+                    Text { text: overlay.uptimeStr; color: Theme.clrText; font { family: overlay.nfFont; pixelSize: 12 } }
                 }
             }
         }
