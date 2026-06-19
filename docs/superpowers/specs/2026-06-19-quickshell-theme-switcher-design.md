@@ -18,7 +18,8 @@ Hyprland-Keybind und überlebt Neustarts.
 - **Echtes Frosted Glass** via Compositor-Blur (Hyprland-`layerrule`), nicht nur
   Transparenz.
 - **Akzentfarbe** der Liquidglass-Variante: Sky-Blue `#88d8ff` (aus `homepage`).
-- **Umschalter:** Rofi-Menü **und** Keybind-Toggle, Auswahl persistiert über eine
+- **Umschalter:** Rofi-Menü **und** Keybind-Toggle, getriggert über Quickshell-IPC
+  (`qs ipc call`); Auswahl persistiert über eine von der Shell geschriebene
   State-Datei.
 
 ## Designsprache der Referenzprojekte (Quelle der Liquidglass-Variante)
@@ -40,8 +41,10 @@ dieselbe Struktur, unterscheiden sich nur im Akzent):
 Neue Dateien unter `.config/quickshell/`:
 
 - `Theme.qml` — `pragma Singleton`. Einzige Wahrheit für alle Farb- und
-  Flächen-Token. Hält beide Varianten als JS-Objekte und wählt die aktive anhand
-  der State-Datei.
+  Flächen-Token. Hält beide Varianten als JS-Objekte, exponiert die aktive über
+  `property string variant` und bietet die Methoden `setVariant(name)` und
+  `toggle()`. Beide aktualisieren `variant` und persistieren die Wahl in die
+  State-Datei.
 - `qmldir` — Inhalt: `singleton Theme 1.0 Theme.qml`
 
 Heute sind die Farbpaletten in **5 Dateien dupliziert**: `Bar.qml`,
@@ -49,18 +52,27 @@ Heute sind die Farbpaletten in **5 Dateien dupliziert**: `Bar.qml`,
 Jede lokale `readonly property color clrX`-Definition wird entfernt und durch
 `Theme.clrX` ersetzt (mechanischer Refactor, gleiche Token-Namen).
 
-### Reaktivität
+### Umschaltung via IPC
 
-`Theme.qml` liest `${XDG_STATE_HOME:-~/.local/state}/quickshell/theme`
-(Dateiinhalt: `mocha` oder `liquidglass`) per
-`FileView { watchChanges: true }`. Schreibt das Rofi-Skript oder der Keybind die
-Datei neu, schaltet die gesamte Shell **live** um — kein Reload nötig. Fehlt die
-Datei, gilt Default `mocha`.
+Die Umschaltung läuft über Quickshell-IPC (deterministisch, kein Datei-Watching):
 
-**Fallback-Risiko:** Falls der vorhandene Quickshell-Build die `FileView`-Änderung
-nicht zuverlässig live nachzieht, fällt die Mechanik auf einen aktiven
-`qs ipc`-Aufruf im Umschalt-Skript zurück (Skript triggert dann ein
-IPC-Handler-Target in der Shell). Wird beim Implementieren verifiziert.
+- In `shell.qml` wird einmalig ein `IpcHandler { target: "theme" }` instanziiert
+  mit den Funktionen `toggle()` und `setVariant(string name)`. Diese delegieren an
+  die gleichnamigen Methoden des `Theme`-Singletons.
+- Aufruf von außen: `qs ipc call theme toggle` bzw.
+  `qs ipc call theme setVariant liquidglass`.
+- Weil alle QML-Komponenten ihre Farben aus dem reaktiven `Theme`-Singleton
+  beziehen, schaltet das Setzen von `Theme.variant` die gesamte Shell **live** um —
+  kein Reload nötig.
+
+### Persistenz
+
+`${XDG_STATE_HOME:-~/.local/state}/quickshell/theme` (Inhalt: `mocha` oder
+`liquidglass`) dient **ausschließlich** der Persistenz, nicht als Live-Trigger:
+
+- **Schreiben:** `Theme.setVariant`/`toggle` schreiben die neue Wahl in die Datei.
+- **Lesen:** einmalig beim Shell-Start (`Component.onCompleted`) zum
+  Wiederherstellen der letzten Wahl. Fehlt die Datei, gilt Default `mocha`.
 
 ## Token-Modell (beide Varianten)
 
@@ -108,11 +120,12 @@ Blur der Lücken über `ignorealpha` nachjustieren.
 
 ### `scripts/theme-switch.sh`
 
-- `theme-switch.sh toggle` — liest aktuelle Auswahl, schreibt die jeweils andere
-  in die State-Datei.
+- `theme-switch.sh toggle` — ruft `qs ipc call theme toggle` auf.
 - `theme-switch.sh menu` — Rofi-Auswahl (`Mocha` / `Liquidglass`) im Stil des
-  bestehenden `scripts/powermenu.sh`, schreibt die Auswahl.
-- Legt das State-Verzeichnis bei Bedarf an.
+  bestehenden `scripts/powermenu.sh`; ruft
+  `qs ipc call theme setVariant <auswahl>` auf.
+- Die State-Datei wird von der Shell selbst geschrieben; das Skript fasst sie nicht
+  an.
 
 ### Hyprland-Keybind
 
@@ -137,7 +150,9 @@ abgeglichen, um Kollisionen zu vermeiden.)
 
 - Nach dem Refactor jede der 5 QML-Dateien einzeln gegen `qmllint` prüfen und die
   Shell starten; beide Varianten live durchschalten und visuell abnehmen.
-- Risiko 1: `FileView`-Live-Reaktivität (siehe Fallback oben).
+- Risiko 1: IPC-Verfügbarkeit — `qs ipc call` setzt voraus, dass die Shell läuft
+  und der `IpcHandler` korrekt registriert ist; beim Implementieren mit
+  `qs ipc show` verifizieren.
 - Risiko 2: Blur der transparenten Bar-Lücken (Tuning via `ignorezero`/
   `ignorealpha`).
 - Risiko 3: Lesbarkeit der Catppuccin-Akzentfarben auf den helleren Glasflächen —
@@ -147,6 +162,7 @@ abgeglichen, um Kollisionen zu vermeiden.)
 
 - **Neu:** `.config/quickshell/Theme.qml`, `.config/quickshell/qmldir`,
   `.config/quickshell/scripts/theme-switch.sh`
-- **Geändert:** `.config/quickshell/Bar.qml`, `MusicOverlay.qml`,
-  `NotificationPopup.qml`, `StatsOverlay.qml`, `SidePanel.qml`
+- **Geändert:** `.config/quickshell/shell.qml` (instanziiert `IpcHandler`),
+  `Bar.qml`, `MusicOverlay.qml`, `NotificationPopup.qml`, `StatsOverlay.qml`,
+  `SidePanel.qml`
 - **Geändert:** `.config/hypr/hyprland.conf` (layerrules + Keybind)
