@@ -13,23 +13,6 @@ PanelWindow {
     property var notifServer
     signal closeRequested()
 
-    // ── Catppuccin Mocha ──────────────────────────────────────────────────────
-    readonly property color clrBase:     "#1e1e2e"
-    readonly property color clrMantle:   "#181825"
-    readonly property color clrSurface0: "#313244"
-    readonly property color clrSurface1: "#45475a"
-    readonly property color clrText:     "#cdd6f4"
-    readonly property color clrSubtext0: "#a6adc8"
-    readonly property color clrSubtext1: "#bac2de"
-    readonly property color clrLavender: "#b4befe"
-    readonly property color clrBlue:     "#89b4fa"
-    readonly property color clrGreen:    "#a6e3a1"
-    readonly property color clrYellow:   "#f9e2af"
-    readonly property color clrRed:      "#f38ba8"
-    readonly property color clrPeach:    "#fab387"
-    readonly property color clrSky:      "#89dceb"
-    readonly property color clrMauve:    "#cba6f7"
-
     screen: Quickshell.screens[0]
     anchors { top: true; left: true; bottom: true }
     margins { top: 8; left: 12; bottom: 8 }
@@ -114,9 +97,9 @@ PanelWindow {
             height: parent.height
             x: panel.panelOpen ? 0 : -parent.width
             Behavior on x { NumberAnimation { duration: 300; easing.type: Easing.OutCubic } }
-            color: panel.clrMantle
+            color: Theme.panelBg
             radius: 16
-            border { color: Qt.rgba(0.537, 0.863, 0.922, 0.15); width: 1 }
+            border { color: Theme.borderColor(0.15); width: 1 }
 
             ColumnLayout {
                 anchors { fill: parent; margins: 14 }
@@ -129,25 +112,25 @@ PanelWindow {
 
                     Rectangle {
                         width: 34; height: 34; radius: 17
-                        color: panel.clrSurface0
+                        color: Theme.clrSurface0
                         Text {
                             anchors.centerIn: parent
-                            text: "󰄛"; color: panel.clrSky
+                            text: "󰄛"; color: Theme.clrSky
                             font { pixelSize: 16; family: "JetBrainsMono Nerd Font" }
                         }
                     }
                     Text {
                         text: "Control Center"
-                        color: panel.clrText
+                        color: Theme.clrText
                         font { pixelSize: 14; bold: true; family: "JetBrainsMono Nerd Font" }
                         Layout.fillWidth: true
                     }
                     Rectangle {
                         width: 28; height: 28; radius: 14
-                        color: panel.clrSurface0
+                        color: Theme.clrSurface0
                         Text {
                             anchors.centerIn: parent
-                            text: "󰅖"; color: panel.clrSubtext0
+                            text: "󰅖"; color: Theme.clrSubtext0
                             font { pixelSize: 12; family: "JetBrainsMono Nerd Font" }
                         }
                         MouseArea {
@@ -175,10 +158,10 @@ PanelWindow {
                             height: 52
                             radius: 12
                             color: modelData.active
-                                   ? Qt.rgba(0.537, 0.863, 0.922, 0.2)
-                                   : panel.clrSurface0
+                                   ? Theme.borderColor(0.2)
+                                   : Theme.clrSurface0
                             border {
-                                color: modelData.active ? panel.clrSky : "transparent"
+                                color: modelData.active ? Theme.clrSky : "transparent"
                                 width: 1
                             }
 
@@ -188,13 +171,13 @@ PanelWindow {
                                 Text {
                                     Layout.alignment: Qt.AlignHCenter
                                     text: modelData.icon
-                                    color: modelData.active ? panel.clrSky : panel.clrSubtext0
+                                    color: modelData.active ? Theme.clrSky : Theme.clrSubtext0
                                     font { pixelSize: 16; family: "JetBrainsMono Nerd Font" }
                                 }
                                 Text {
                                     Layout.alignment: Qt.AlignHCenter
                                     text: modelData.label
-                                    color: modelData.active ? panel.clrSky : panel.clrSubtext0
+                                    color: modelData.active ? Theme.clrSky : Theme.clrSubtext0
                                     font { pixelSize: 9; family: "JetBrainsMono Nerd Font" }
                                 }
                             }
@@ -228,7 +211,7 @@ PanelWindow {
                     spacing: 10
 
                     Text {
-                        text: "󰕾"; color: panel.clrBlue
+                        text: "󰕾"; color: Theme.clrBlue
                         font { pixelSize: 14; family: "JetBrainsMono Nerd Font" }
                     }
                     Item {
@@ -238,11 +221,11 @@ PanelWindow {
                         Rectangle {
                             anchors { verticalCenter: parent.verticalCenter; left: parent.left; right: parent.right }
                             height: 6; radius: 3
-                            color: panel.clrSurface0
+                            color: Theme.clrSurface0
                             Rectangle {
                                 width: parent.width * panel.volumeVal
                                 height: parent.height; radius: parent.radius
-                                color: panel.clrBlue
+                                color: Theme.clrBlue
                             }
                         }
                         // Thumb
@@ -250,7 +233,7 @@ PanelWindow {
                             x: panel.volumeVal * (parent.width - width)
                             anchors.verticalCenter: parent.verticalCenter
                             width: 14; height: 14; radius: 7
-                            color: panel.clrText
+                            color: Theme.clrText
                         }
                         MouseArea {
                             anchors.fill: parent
@@ -261,7 +244,7 @@ PanelWindow {
                     }
                     Text {
                         text: Math.round(panel.volumeVal * 100) + "%"
-                        color: panel.clrSubtext0
+                        color: Theme.clrSubtext0
                         font { pixelSize: 10; family: "JetBrainsMono Nerd Font" }
                         Layout.minimumWidth: 30
                     }
@@ -273,7 +256,7 @@ PanelWindow {
                     spacing: 10
 
                     Text {
-                        text: "󰃟"; color: panel.clrYellow
+                        text: "󰃟"; color: Theme.clrYellow
                         font { pixelSize: 14; family: "JetBrainsMono Nerd Font" }
                     }
                     Item {
@@ -283,18 +266,18 @@ PanelWindow {
                         Rectangle {
                             anchors { verticalCenter: parent.verticalCenter; left: parent.left; right: parent.right }
                             height: 6; radius: 3
-                            color: panel.clrSurface0
+                            color: Theme.clrSurface0
                             Rectangle {
                                 width: parent.width * panel.brightnessVal
                                 height: parent.height; radius: parent.radius
-                                color: panel.clrYellow
+                                color: Theme.clrYellow
                             }
                         }
                         Rectangle {
                             x: panel.brightnessVal * (parent.width - width)
                             anchors.verticalCenter: parent.verticalCenter
                             width: 14; height: 14; radius: 7
-                            color: panel.clrText
+                            color: Theme.clrText
                         }
                         MouseArea {
                             anchors.fill: parent
@@ -305,7 +288,7 @@ PanelWindow {
                     }
                     Text {
                         text: Math.round(panel.brightnessVal * 100) + "%"
-                        color: panel.clrSubtext0
+                        color: Theme.clrSubtext0
                         font { pixelSize: 10; family: "JetBrainsMono Nerd Font" }
                         Layout.minimumWidth: 30
                     }
@@ -316,7 +299,7 @@ PanelWindow {
                     Layout.fillWidth: true
                     height: 70
                     radius: 12
-                    color: panel.clrSurface0
+                    color: Theme.clrSurface0
                     visible: panel.activePlayer !== null
 
                     RowLayout {
@@ -326,7 +309,7 @@ PanelWindow {
                         // Album art
                         Rectangle {
                             width: 50; height: 50; radius: 8
-                            color: panel.clrSurface1; clip: true
+                            color: Theme.clrSurface1; clip: true
                             Image {
                                 anchors.fill: parent
                                 source: panel.activePlayer ? panel.activePlayer.trackArtUrl : ""
@@ -335,7 +318,7 @@ PanelWindow {
                             // Fallback icon
                             Text {
                                 anchors.centerIn: parent
-                                text: "󰝚"; color: panel.clrMauve
+                                text: "󰝚"; color: Theme.clrMauve
                                 font { pixelSize: 18; family: "JetBrainsMono Nerd Font" }
                                 visible: !panel.activePlayer || !panel.activePlayer.trackArtUrl
                             }
@@ -347,14 +330,14 @@ PanelWindow {
 
                             Text {
                                 text: panel.activePlayer ? (panel.activePlayer.trackTitle || "") : ""
-                                color: panel.clrText
+                                color: Theme.clrText
                                 font { pixelSize: 11; bold: true; family: "JetBrainsMono Nerd Font" }
                                 elide: Text.ElideRight
                                 Layout.fillWidth: true
                             }
                             Text {
                                 text: panel.activePlayer ? (panel.activePlayer.trackArtist || "") : ""
-                                color: panel.clrSubtext0
+                                color: Theme.clrSubtext0
                                 font { pixelSize: 10; family: "JetBrainsMono Nerd Font" }
                                 elide: Text.ElideRight
                                 Layout.fillWidth: true
@@ -363,13 +346,13 @@ PanelWindow {
                             RowLayout {
                                 spacing: 14
                                 Text {
-                                    text: "󰒮"; color: panel.clrSubtext1
+                                    text: "󰒮"; color: Theme.clrSubtext1
                                     font { pixelSize: 14; family: "JetBrainsMono Nerd Font" }
                                     MouseArea { anchors.fill: parent; cursorShape: Qt.PointingHandCursor; onClicked: { if (panel.activePlayer) panel.activePlayer.previous() } }
                                 }
                                 Text {
                                     text: (panel.activePlayer && panel.activePlayer.playbackState === MprisPlaybackState.Playing) ? "󰏥" : "󰐊"
-                                    color: panel.clrSky
+                                    color: Theme.clrSky
                                     font { pixelSize: 16; family: "JetBrainsMono Nerd Font" }
                                     MouseArea {
                                         anchors.fill: parent; cursorShape: Qt.PointingHandCursor
@@ -383,7 +366,7 @@ PanelWindow {
                                     }
                                 }
                                 Text {
-                                    text: "󰒭"; color: panel.clrSubtext1
+                                    text: "󰒭"; color: Theme.clrSubtext1
                                     font { pixelSize: 14; family: "JetBrainsMono Nerd Font" }
                                     MouseArea { anchors.fill: parent; cursorShape: Qt.PointingHandCursor; onClicked: { if (panel.activePlayer) panel.activePlayer.next() } }
                                 }
@@ -395,7 +378,7 @@ PanelWindow {
                 // ── Notifications ─────────────────────────────────────────────
                 Text {
                     text: "Notifications"
-                    color: panel.clrSubtext0
+                    color: Theme.clrSubtext0
                     font { pixelSize: 10; family: "JetBrainsMono Nerd Font" }
                     visible: notifServer.trackedNotifications.length > 0
                 }
@@ -412,7 +395,7 @@ PanelWindow {
                         width: nv.width
                         height: notifCol.implicitHeight + 16
                         radius: 10
-                        color: panel.clrSurface0
+                        color: Theme.clrSurface0
 
                         RowLayout {
                             anchors { fill: parent; margins: 10 }
@@ -424,14 +407,14 @@ PanelWindow {
                                 spacing: 2
                                 Text {
                                     text: modelData.summary
-                                    color: panel.clrText
+                                    color: Theme.clrText
                                     font { pixelSize: 11; bold: true; family: "JetBrainsMono Nerd Font" }
                                     elide: Text.ElideRight
                                     Layout.fillWidth: true
                                 }
                                 Text {
                                     text: modelData.body
-                                    color: panel.clrSubtext0
+                                    color: Theme.clrSubtext0
                                     font { pixelSize: 10; family: "JetBrainsMono Nerd Font" }
                                     elide: Text.ElideRight
                                     Layout.fillWidth: true
@@ -439,7 +422,7 @@ PanelWindow {
                                 }
                             }
                             Text {
-                                text: "󰅖"; color: panel.clrSubtext1
+                                text: "󰅖"; color: Theme.clrSubtext1
                                 font { pixelSize: 14; family: "JetBrainsMono Nerd Font" }
                                 MouseArea {
                                     anchors.fill: parent; cursorShape: Qt.PointingHandCursor
@@ -454,7 +437,7 @@ PanelWindow {
                 Rectangle {
                     Layout.fillWidth: true
                     height: 1
-                    color: panel.clrSurface1
+                    color: Theme.clrSurface1
                 }
 
                 RowLayout {
@@ -464,15 +447,15 @@ PanelWindow {
 
                     Repeater {
                         model: [
-                            { icon: "󰍁", label: "Lock",    cmd: "loginctl lock-session", color: panel.clrBlue  },
-                            { icon: "󰜉", label: "Reboot",  cmd: "systemctl reboot",       color: panel.clrPeach },
-                            { icon: "󰐥", label: "Shutdown",cmd: "systemctl poweroff",     color: panel.clrRed   }
+                            { icon: "󰍁", label: "Lock",    cmd: "loginctl lock-session", color: Theme.clrBlue  },
+                            { icon: "󰜉", label: "Reboot",  cmd: "systemctl reboot",       color: Theme.clrPeach },
+                            { icon: "󰐥", label: "Shutdown",cmd: "systemctl poweroff",     color: Theme.clrRed   }
                         ]
                         delegate: Rectangle {
                             Layout.fillWidth: true
                             height: 44
                             radius: 10
-                            color: panel.clrSurface0
+                            color: Theme.clrSurface0
 
                             ColumnLayout {
                                 anchors.centerIn: parent
@@ -486,7 +469,7 @@ PanelWindow {
                                 Text {
                                     Layout.alignment: Qt.AlignHCenter
                                     text: modelData.label
-                                    color: panel.clrSubtext0
+                                    color: Theme.clrSubtext0
                                     font { pixelSize: 9; family: "JetBrainsMono Nerd Font" }
                                 }
                             }
