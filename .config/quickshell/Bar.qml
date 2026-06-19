@@ -19,24 +19,6 @@ PanelWindow {
 
     function launchRofi() { rofiProc.running = true }
 
-    // ── Catppuccin Mocha ─────────────────────────────────────────────────────
-    readonly property color clrBase:     "#1e1e2e"
-    readonly property color clrSurface0: "#313244"
-    readonly property color clrSurface1: "#45475a"
-    readonly property color clrText:     "#cdd6f4"
-    readonly property color clrSubtext0: "#a6adc8"
-    readonly property color clrBlue:     "#89b4fa"
-    readonly property color clrLavender: "#b4befe"
-    readonly property color clrGreen:    "#a6e3a1"
-    readonly property color clrYellow:   "#f9e2af"
-    readonly property color clrPeach:    "#fab387"
-    readonly property color clrRed:      "#f38ba8"
-    readonly property color clrTeal:     "#94e2d5"
-    readonly property color clrSky:      "#89dceb"
-    readonly property color clrSapphire: "#74c7ec"
-    readonly property color clrMauve:    "#cba6f7"
-    readonly property color clrPink:     "#f5c2e7"
-
     // ── Screen ───────────────────────────────────────────────────────────────
     screen: {
         for (var i = 0; i < Quickshell.screens.length; i++)
@@ -319,9 +301,9 @@ PanelWindow {
             id: leftIsland
             anchors { left: parent.left; top: parent.top; topMargin: 2 }
             height: 40
-            radius: 12
-            color: bar.clrBase
-            border { color: Qt.rgba(0.537, 0.863, 0.922, 0.55); width: 2 }
+            radius: Theme.radius
+            color: Theme.panelBg
+            border { color: Theme.borderColor(0.55); width: 2 }
             clip: true
             width: leftRow.implicitWidth + 16
 
@@ -347,11 +329,11 @@ PanelWindow {
                             Hyprland.focusedMonitor.activeWorkspace.id === modelData.id
                         width: 28; height: 28
                         radius: 6
-                        color: isActive ? bar.clrSky : bar.clrSurface0
+                        color: isActive ? Theme.clrSky : Theme.clrSurface0
                         Text {
                             anchors.centerIn: parent
                             text:  modelData.id
-                            color: parent.isActive ? bar.clrBase : bar.clrSubtext0
+                            color: parent.isActive ? Theme.clrBase : Theme.clrSubtext0
                             font  { family: "JetBrainsMono Nerd Font"; pixelSize: 13; bold: parent.isActive }
                         }
                         MouseArea {
@@ -365,14 +347,14 @@ PanelWindow {
                 // Side panel toggle
                 BarButton {
                     icon:      "󰍜"
-                    iconColor: bar.clrBlue
+                    iconColor: Theme.clrBlue
                     onClicked: bar.panelToggled()
                 }
 
                 // Rofi launcher button
                 BarButton {
                     icon:      "󰍉"
-                    iconColor: bar.clrSky
+                    iconColor: Theme.clrSky
                     onClicked: bar.launchRofi()
                 }
             }
@@ -383,9 +365,9 @@ PanelWindow {
             id: windowIsland
             anchors { left: leftIsland.right; leftMargin: 8; top: parent.top; topMargin: 2 }
             height:  40
-            radius:  12
-            color:   bar.clrBase
-            border   { color: Qt.rgba(0.537, 0.863, 0.922, 0.55); width: 2 }
+            radius:  Theme.radius
+            color:   Theme.panelBg
+            border   { color: Theme.borderColor(0.55); width: 2 }
             visible: bar.windowTitle.length > 0
             implicitWidth: Math.min(winRow.implicitWidth + 20, 280)
             clip: true
@@ -396,12 +378,12 @@ PanelWindow {
                 spacing: 6
                 Text {
                     text:  "󰖯"
-                    color: bar.clrBlue
+                    color: Theme.clrBlue
                     font   { family: "JetBrainsMono Nerd Font"; pixelSize: 13 }
                 }
                 Text {
                     text:  bar.windowTitle
-                    color: bar.clrText
+                    color: Theme.clrText
                     font   { family: "JetBrainsMono Nerd Font"; pixelSize: 12 }
                     elide: Text.ElideRight
                     Layout.maximumWidth: 230
@@ -416,9 +398,9 @@ PanelWindow {
             anchors.topMargin: 2
             x: (leftIsland.x + leftIsland.width + centerIsland.x) / 2 - width / 2
             height:  40
-            radius:  12
-            color:   bar.clrBase
-            border   { color: Qt.rgba(0.537, 0.863, 0.922, 0.55); width: 2 }
+            radius:  Theme.radius
+            color:   Theme.panelBg
+            border   { color: Theme.borderColor(0.55); width: 2 }
             visible: bar.activePlayer !== null
             width:   musicRow.implicitWidth + 20
 
@@ -430,7 +412,7 @@ PanelWindow {
                 // Icon (klick öffnet Overlay)
                 Text {
                     text:  "󰝚"
-                    color: bar.clrMauve
+                    color: Theme.clrMauve
                     font   { family: "JetBrainsMono Nerd Font"; pixelSize: 13 }
                     MouseArea {
                         anchors.fill: parent
@@ -450,7 +432,7 @@ PanelWindow {
                     Text {
                         id: scrollText
                         text:  bar.songText
-                        color: bar.clrText
+                        color: Theme.clrText
                         font   { family: "JetBrainsMono Nerd Font"; pixelSize: 12 }
 
                         onTextChanged: {
@@ -496,12 +478,12 @@ PanelWindow {
                     }
                 }
 
-                Rectangle { width: 1; height: 20; color: bar.clrSurface1 }
+                Rectangle { width: 1; height: 20; color: Theme.clrSurface1 }
 
                 // Controls
                 Text {
                     text: "󰒮"
-                    color: bar.clrSubtext0
+                    color: Theme.clrSubtext0
                     font  { family: "JetBrainsMono Nerd Font"; pixelSize: 14 }
                     MouseArea {
                         anchors.fill: parent; cursorShape: Qt.PointingHandCursor
@@ -511,7 +493,7 @@ PanelWindow {
                 Text {
                     text: (bar.activePlayer && bar.activePlayer.playbackState === MprisPlaybackState.Playing)
                           ? "󰏥" : "󰐊"
-                    color: bar.clrSky
+                    color: Theme.clrSky
                     font  { family: "JetBrainsMono Nerd Font"; pixelSize: 16 }
                     MouseArea {
                         anchors.fill: parent; cursorShape: Qt.PointingHandCursor
@@ -526,7 +508,7 @@ PanelWindow {
                 }
                 Text {
                     text: "󰒭"
-                    color: bar.clrSubtext0
+                    color: Theme.clrSubtext0
                     font  { family: "JetBrainsMono Nerd Font"; pixelSize: 14 }
                     MouseArea {
                         anchors.fill: parent; cursorShape: Qt.PointingHandCursor
@@ -534,12 +516,12 @@ PanelWindow {
                     }
                 }
 
-                Rectangle { width: 1; height: 20; color: bar.clrSurface1 }
+                Rectangle { width: 1; height: 20; color: Theme.clrSurface1 }
 
                 // Progress
                 Text {
                     text:  bar.formatTime(bar.trackPosition)
-                    color: bar.clrSubtext0
+                    color: Theme.clrSubtext0
                     font   { family: "JetBrainsMono Nerd Font"; pixelSize: 11 }
                 }
 
@@ -551,7 +533,7 @@ PanelWindow {
                     Rectangle {
                         anchors.fill: parent
                         radius: 2
-                        color: bar.clrSurface1
+                        color: Theme.clrSurface1
                     }
                     Rectangle {
                         width: bar.trackLength > 0
@@ -559,7 +541,7 @@ PanelWindow {
                                : 0
                         height: parent.height
                         radius: 2
-                        color: bar.clrSky
+                        color: Theme.clrSky
                     }
                     MouseArea {
                         anchors { fill: parent; margins: -6 }
@@ -576,7 +558,7 @@ PanelWindow {
 
                 Text {
                     text:  bar.formatTime(bar.trackLength)
-                    color: bar.clrSubtext0
+                    color: Theme.clrSubtext0
                     font   { family: "JetBrainsMono Nerd Font"; pixelSize: 11 }
                 }
             }
@@ -587,9 +569,9 @@ PanelWindow {
             id: centerIsland
             anchors { horizontalCenter: parent.horizontalCenter; top: parent.top; topMargin: 2 }
             height: 40
-            radius: 12
-            color: bar.clrBase
-            border { color: Qt.rgba(0.537, 0.863, 0.922, 0.55); width: 2 }
+            radius: Theme.radius
+            color: Theme.panelBg
+            border { color: Theme.borderColor(0.55); width: 2 }
             width: statsRow.implicitWidth + 24
 
             RowLayout {
@@ -597,27 +579,27 @@ PanelWindow {
                 anchors.centerIn: parent
                 spacing: 14
 
-                StatItem { icon: "󰻠"; value: bar.cpuUsage + "%"; valueChars: 4; iconColor: bar.clrGreen;   textColor: bar.clrText }
-                StatItem { icon: "󰓅"; value: bar.cpuClock;        valueChars: 7; iconColor: bar.clrSky;     textColor: bar.clrText }
-                StatItem { icon: "󱐋"; value: bar.cpuPower;        valueChars: 4; iconColor: bar.clrPeach;   textColor: bar.clrText }
-                StatItem { icon: "󰔏"; value: bar.cpuTemp + "°C";  valueChars: 4; iconColor: bar.clrYellow;  textColor: bar.clrText }
+                StatItem { icon: "󰻠"; value: bar.cpuUsage + "%"; valueChars: 4; iconColor: Theme.clrGreen;   textColor: Theme.clrText }
+                StatItem { icon: "󰓅"; value: bar.cpuClock;        valueChars: 7; iconColor: Theme.clrSky;     textColor: Theme.clrText }
+                StatItem { icon: "󱐋"; value: bar.cpuPower;        valueChars: 4; iconColor: Theme.clrPeach;   textColor: Theme.clrText }
+                StatItem { icon: "󰔏"; value: bar.cpuTemp + "°C";  valueChars: 4; iconColor: Theme.clrYellow;  textColor: Theme.clrText }
 
-                Rectangle { width: 1; height: 20; color: bar.clrSurface1 }
+                Rectangle { width: 1; height: 20; color: Theme.clrSurface1 }
 
-                StatItem { icon: "󰍛"; value: bar.ramUsed + "G";   valueChars: 5; iconColor: bar.clrMauve;   textColor: bar.clrText }
+                StatItem { icon: "󰍛"; value: bar.ramUsed + "G";   valueChars: 5; iconColor: Theme.clrMauve;   textColor: Theme.clrText }
 
-                Rectangle { width: 1; height: 20; color: bar.clrSurface1 }
+                Rectangle { width: 1; height: 20; color: Theme.clrSurface1 }
 
-                StatItem { icon: "󰢮"; value: bar.gpuUsage + "%";  valueChars: 4; iconColor: bar.clrTeal;    textColor: bar.clrText }
-                StatItem { icon: "󰓅"; value: bar.gpuClock;         valueChars: 7; iconColor: bar.clrSky;     textColor: bar.clrText }
-                StatItem { icon: "󱐋"; value: bar.gpuPower;         valueChars: 4; iconColor: bar.clrPeach;   textColor: bar.clrText }
-                StatItem { icon: "󰔏"; value: bar.gpuTemp + "°C";   valueChars: 4; iconColor: bar.clrYellow;  textColor: bar.clrText }
-                StatItem { icon: "󰆧"; value: bar.gpuVram;          valueChars: 6; iconColor: bar.clrSky;     textColor: bar.clrText }
+                StatItem { icon: "󰢮"; value: bar.gpuUsage + "%";  valueChars: 4; iconColor: Theme.clrTeal;    textColor: Theme.clrText }
+                StatItem { icon: "󰓅"; value: bar.gpuClock;         valueChars: 7; iconColor: Theme.clrSky;     textColor: Theme.clrText }
+                StatItem { icon: "󱐋"; value: bar.gpuPower;         valueChars: 4; iconColor: Theme.clrPeach;   textColor: Theme.clrText }
+                StatItem { icon: "󰔏"; value: bar.gpuTemp + "°C";   valueChars: 4; iconColor: Theme.clrYellow;  textColor: Theme.clrText }
+                StatItem { icon: "󰆧"; value: bar.gpuVram;          valueChars: 6; iconColor: Theme.clrSky;     textColor: Theme.clrText }
 
-                Rectangle { width: 1; height: 20; color: bar.clrSurface1 }
+                Rectangle { width: 1; height: 20; color: Theme.clrSurface1 }
 
-                StatItem { icon: "󰁆"; value: bar.netDown; valueChars: 5; iconColor: bar.clrBlue;     textColor: bar.clrText }
-                StatItem { icon: "󰁞"; value: bar.netUp;   valueChars: 5; iconColor: bar.clrSapphire; textColor: bar.clrText }
+                StatItem { icon: "󰁆"; value: bar.netDown; valueChars: 5; iconColor: Theme.clrBlue;     textColor: Theme.clrText }
+                StatItem { icon: "󰁞"; value: bar.netUp;   valueChars: 5; iconColor: Theme.clrSapphire; textColor: Theme.clrText }
             }
 
             MouseArea {
@@ -632,9 +614,9 @@ PanelWindow {
             id: vizIsland
             anchors { right: rightIsland.left; rightMargin: 8; top: parent.top; topMargin: 2 }
             height:  40
-            radius:  12
-            color:   bar.clrBase
-            border   { color: Qt.rgba(0.537, 0.863, 0.922, bar.hasAudio ? 0.55 : 0.0); width: 2 }
+            radius:  Theme.radius
+            color:   Theme.panelBg
+            border   { color: Theme.borderColor(bar.hasAudio ? 0.55 : 0.0); width: 2 }
             width:   vizBars.implicitWidth + 20
             opacity: bar.hasAudio ? 1.0 : 0.0
 
@@ -663,8 +645,8 @@ PanelWindow {
                             radius: 1
                             gradient: Gradient {
                                 orientation: Gradient.Vertical
-                                GradientStop { position: 0.0; color: "#c8eef5" }
-                                GradientStop { position: 1.0; color: Qt.rgba(0.537, 0.863, 0.922, 0.4) }
+                                GradientStop { position: 0.0; color: Theme.vizBarTop }
+                                GradientStop { position: 1.0; color: Qt.rgba(Theme.clrSky.r, Theme.clrSky.g, Theme.clrSky.b, 0.4) }
                             }
                             Behavior on height { NumberAnimation { duration: 55; easing.type: Easing.OutQuad } }
                         }
@@ -678,9 +660,9 @@ PanelWindow {
             id: rightIsland
             anchors { right: parent.right; top: parent.top; topMargin: 2 }
             height: 40
-            radius: 12
-            color: bar.clrBase
-            border { color: Qt.rgba(0.537, 0.863, 0.922, 0.55); width: 2 }
+            radius: Theme.radius
+            color: Theme.panelBg
+            border { color: Theme.borderColor(0.55); width: 2 }
             width: rightRow.implicitWidth + 16
 
             RowLayout {
@@ -725,22 +707,22 @@ PanelWindow {
                     }
                 }
 
-                Rectangle { width: 1; height: 20; color: bar.clrSurface1 }
+                Rectangle { width: 1; height: 20; color: Theme.clrSurface1 }
 
                 // Clock
                 Text {
                     text:  "󰃰 " + bar.clockTime
-                    color: bar.clrPink
+                    color: Theme.clrPink
                     font  { family: "JetBrainsMono Nerd Font"; pixelSize: 13; bold: true }
                     Layout.alignment: Qt.AlignVCenter
                 }
 
-                Rectangle { width: 1; height: 20; color: bar.clrSurface1 }
+                Rectangle { width: 1; height: 20; color: Theme.clrSurface1 }
 
                 // Power menu
                 BarButton {
                     icon:      "󰐥"
-                    iconColor: bar.clrRed
+                    iconColor: Theme.clrRed
                     onClicked: bar.powerMenu()
                 }
             }
