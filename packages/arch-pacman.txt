@@ -23,6 +23,7 @@ mangohud
 brightnessctl
 playerctl
 ksshaskpass    # grafischer sudo-Askpass-Helper (sudo -A), siehe lib/system.sh
+hyprshot
 # Gaming
 steam
 steam-devices
