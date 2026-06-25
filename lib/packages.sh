@@ -151,8 +151,8 @@ setup_sddm() {
 
     log_info "richte SDDM ein"
     run sudo pacman -S --needed --noconfirm sddm
-    if _ensure_paru; then
-        run paru -S --needed --noconfirm catppuccin-sddm-theme-mocha
+    if _ensure_yay; then
+        run yay -S --needed --noconfirm catppuccin-sddm-theme-mocha
     fi
 
     # Theme-Konfiguration nach /etc/sddm.conf.d/ (legt das Verzeichnis bei Bedarf an).
@@ -164,23 +164,22 @@ setup_sddm() {
     log_ok "SDDM aktiviert"
 }
 
-# _ensure_paru — stellt sicher, dass paru verfügbar ist (sonst Bootstrap aus AUR).
-# makepkg -si zieht die Make-Abhängigkeiten (u.a. Rust) selbst über pacman nach.
-_ensure_paru() {
-    command -v paru >/dev/null 2>&1 && return 0
-    log_info "paru nicht gefunden — bootstrappe aus AUR"
+# _ensure_yay — stellt sicher, dass yay verfügbar ist (sonst Bootstrap aus AUR).
+_ensure_yay() {
+    command -v yay >/dev/null 2>&1 && return 0
+    log_info "yay nicht gefunden — bootstrappe aus AUR"
     if [[ "$DRY_RUN" -eq 1 ]]; then
-        log_info "[dry-run] git clone paru + makepkg -si"
+        log_info "[dry-run] git clone yay + makepkg -si"
         return 0
     fi
     local tmp; tmp="$(mktemp -d)"
-    if git clone https://aur.archlinux.org/paru.git "$tmp/paru" \
-        && ( cd "$tmp/paru" && makepkg -si --noconfirm ); then
+    if git clone https://aur.archlinux.org/yay.git "$tmp/yay" \
+        && ( cd "$tmp/yay" && makepkg -si --noconfirm ); then
         rm -rf "$tmp"
         return 0
     fi
     rm -rf "$tmp"
-    log_warn "paru-Bootstrap fehlgeschlagen — AUR-Pakete werden übersprungen"
+    log_warn "yay-Bootstrap fehlgeschlagen — AUR-Pakete werden übersprungen"
     return 1
 }
 
@@ -207,9 +206,9 @@ install_packages_arch() {
     install_nvidia_packages_arch
 
     if [[ "${#aur_list[@]}" -gt 0 ]]; then
-        if _ensure_paru; then
+        if _ensure_yay; then
             log_info "installiere AUR-Pakete (${#aur_list[@]})"
-            run paru -S --needed --noconfirm "${aur_list[@]}"
+            run yay -S --needed --noconfirm "${aur_list[@]}"
         fi
     fi
 

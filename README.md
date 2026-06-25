@@ -19,7 +19,7 @@ Der Installer:
    fish (`chsh`, idempotent; distro-unabhängig),
 1. passt auf Arch `/etc/pacman.conf` an (`Color`, `ParallelDownloads`,
    `multilib`; mit Backup), synchronisiert die Paket-DBs und installiert die
-   Pakete aus `packages/` (`pacman` + AUR via `paru`, das bei Bedarf
+   Pakete aus `packages/` (`pacman` + AUR via `yay`, das bei Bedarf
    gebootstrappt wird). Die App-Pakete (discord, brave-beta-bin,
    tidal-hifi-tidaluna, vencord-hook) stehen in den `arch-*`-Listen; der
    Gaming-Stack (steam, gamemode, gamescope, wine, proton-ge, …) ebenso. Der
