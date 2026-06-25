@@ -44,6 +44,56 @@ configure_pacman() {
     log_ok "pacman.conf angepasst (Color, ParallelDownloads, multilib)"
 }
 
+# _makepkg_debug_disabled <conf> — 0 (true), wenn die aktive OPTIONS-Zeile
+# bereits '!debug' enthält UND kein eigenständiges 'debug' mehr. Reine Funktion.
+_makepkg_debug_disabled() {
+    local conf="$1" line
+    line="$(grep -E '^[[:space:]]*OPTIONS=\(' "$conf" 2>/dev/null | head -1)" || return 1
+    [[ "$line" == *'!debug'* && ! "$line" =~ [[:space:](]debug[[:space:])] ]]
+}
+
+# _apply_makepkg_nodebug <conf> — deaktiviert die Erzeugung von -debug-Paketen,
+# indem auf der aktiven OPTIONS-Zeile alle debug/!debug-Tokens entfernt und genau
+# ein '!debug' vor die schließende Klammer gesetzt wird. Idempotent, editiert die
+# Datei direkt (der Aufrufer sorgt für Schreibrechte). Reine Funktion -> testbar.
+_apply_makepkg_nodebug() {
+    local conf="$1"
+    # Nur die aktive (nicht auskommentierte) OPTIONS-Zeile anfassen.
+    grep -qE '^[[:space:]]*OPTIONS=\(' "$conf" || return 0
+    _makepkg_debug_disabled "$conf" && return 0
+    # !?\<debug\>  trifft sowohl 'debug' als auch '!debug' (Wortgrenzen), danach
+    # Spaces normalisieren und ein einzelnes !debug vor ')' ergänzen.
+    sed -i -E '/^[[:space:]]*OPTIONS=\(/{
+        s/!?\<debug\>//g
+        s/[[:space:]]+/ /g
+        s/\( /(/
+        s/ \)/)/
+        s/\)/ !debug)/
+    }' "$conf"
+}
+
+# configure_makepkg — deaktiviert -debug-Pakete in /etc/makepkg.conf (!debug).
+# Ohne lokales Debugging bringen die separaten -debug-Pakete nichts und kosten nur
+# Bauzeit/Platz. Mit einmaligem Backup, via sudo. Idempotent. Nur Arch.
+configure_makepkg() {
+    local conf="/etc/makepkg.conf"
+    [[ -f "$conf" ]] || { log_warn "$conf nicht gefunden — übersprungen"; return 0; }
+
+    if _makepkg_debug_disabled "$conf"; then
+        log_ok "makepkg.conf: -debug-Pakete bereits deaktiviert (!debug)"
+        return 0
+    fi
+
+    if [[ "$DRY_RUN" -eq 1 ]]; then
+        log_info "[dry-run] $conf anpassen: OPTIONS auf !debug (keine -debug-Pakete, mit Backup)"
+        return 0
+    fi
+
+    [[ -f "$conf.dotfiles-bak" ]] || sudo cp "$conf" "$conf.dotfiles-bak"
+    sudo bash -c "$(declare -f _makepkg_debug_disabled _apply_makepkg_nodebug); _apply_makepkg_nodebug '$conf'"
+    log_ok "makepkg.conf angepasst (-debug-Pakete deaktiviert)"
+}
+
 # Bekannte Display-Manager außer sddm.
 _OTHER_DISPLAY_MANAGERS=(gdm lightdm lxdm ly greetd entrance slim xdm)
 
@@ -138,6 +188,8 @@ install_packages_arch() {
     # pacman.conf zuerst anpassen (u.a. multilib), dann DBs syncen + upgraden,
     # damit die multilib-Datenbank verfügbar ist und kein Partial-Upgrade passiert.
     configure_pacman
+    # makepkg.conf vor dem AUR-Bauen anpassen, damit AUR-Pakete ohne -debug gebaut werden.
+    configure_makepkg
     log_info "synchronisiere Paketdatenbanken + System (pacman -Syu)"
     run sudo pacman -Syu --noconfirm
 
