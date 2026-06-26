@@ -183,57 +183,57 @@ PanelWindow {
     // ── Stat processes ───────────────────────────────────────────────────────
     Process {
         id: cpuUsageProc
-        command: ["/bin/bash", Qt.resolvedUrl("scripts/cpu-usage.sh").toString().replace("file://", "")]
+        command: ["/bin/sh", Qt.resolvedUrl("scripts/cpu-usage.sh").toString().replace("file://", "")]
         stdout: SplitParser { splitMarker: "\n"; onRead: d => { if (d.trim()) { bar.cpuUsage = d.trim(); bar.cpuHistory = bar.appendHistory(bar.cpuHistory, parseFloat(d.trim()) || 0) } } }
     }
     Process {
         id: cpuClockProc
-        command: ["/bin/bash", Qt.resolvedUrl("scripts/cpu-clock.sh").toString().replace("file://", "")]
+        command: ["/bin/sh", Qt.resolvedUrl("scripts/cpu-clock.sh").toString().replace("file://", "")]
         stdout: SplitParser { splitMarker: "\n"; onRead: d => { if (d.trim()) bar.cpuClock = d.trim() } }
     }
     Process {
         id: cpuPowerProc
-        command: ["/bin/bash", Qt.resolvedUrl("scripts/cpu-power.sh").toString().replace("file://", "")]
+        command: ["/bin/sh", Qt.resolvedUrl("scripts/cpu-power.sh").toString().replace("file://", "")]
         stdout: SplitParser { splitMarker: "\n"; onRead: d => { if (d.trim()) bar.cpuPower = d.trim() } }
     }
     Process {
         id: cpuTempProc
-        command: ["/bin/bash", Qt.resolvedUrl("scripts/cpu-temp.sh").toString().replace("file://", "")]
+        command: ["/bin/sh", Qt.resolvedUrl("scripts/cpu-temp.sh").toString().replace("file://", "")]
         stdout: SplitParser { splitMarker: "\n"; onRead: d => { if (d.trim()) bar.cpuTemp = d.trim() } }
     }
     Process {
         id: ramProc
-        command: ["/bin/bash", Qt.resolvedUrl("scripts/ram.sh").toString().replace("file://", "")]
+        command: ["/bin/sh", Qt.resolvedUrl("scripts/ram.sh").toString().replace("file://", "")]
         stdout: SplitParser { splitMarker: "\n"; onRead: d => { if (d.trim()) { bar.ramUsed = d.trim(); bar.ramHistory = bar.appendHistory(bar.ramHistory, parseFloat(d.trim()) || 0) } } }
     }
     Process {
         id: gpuUsageProc
-        command: ["/bin/bash", Qt.resolvedUrl("scripts/gpu-usage.sh").toString().replace("file://", "")]
+        command: ["/bin/sh", Qt.resolvedUrl("scripts/gpu-usage.sh").toString().replace("file://", "")]
         stdout: SplitParser { splitMarker: "\n"; onRead: d => { if (d.trim()) { bar.gpuUsage = d.trim(); bar.gpuHistory = bar.appendHistory(bar.gpuHistory, parseFloat(d.trim()) || 0) } } }
     }
     Process {
         id: gpuClockProc
-        command: ["/bin/bash", Qt.resolvedUrl("scripts/gpu-clock.sh").toString().replace("file://", "")]
+        command: ["/bin/sh", Qt.resolvedUrl("scripts/gpu-clock.sh").toString().replace("file://", "")]
         stdout: SplitParser { splitMarker: "\n"; onRead: d => { if (d.trim()) bar.gpuClock = d.trim() } }
     }
     Process {
         id: gpuPowerProc
-        command: ["/bin/bash", Qt.resolvedUrl("scripts/gpu-power.sh").toString().replace("file://", "")]
+        command: ["/bin/sh", Qt.resolvedUrl("scripts/gpu-power.sh").toString().replace("file://", "")]
         stdout: SplitParser { splitMarker: "\n"; onRead: d => { if (d.trim()) bar.gpuPower = d.trim() + "W" } }
     }
     Process {
         id: gpuTempProc
-        command: ["/bin/bash", Qt.resolvedUrl("scripts/gpu-temp.sh").toString().replace("file://", "")]
+        command: ["/bin/sh", Qt.resolvedUrl("scripts/gpu-temp.sh").toString().replace("file://", "")]
         stdout: SplitParser { splitMarker: "\n"; onRead: d => { if (d.trim()) bar.gpuTemp = d.trim() } }
     }
     Process {
         id: gpuVramProc
-        command: ["/bin/bash", Qt.resolvedUrl("scripts/gpu-vram.sh").toString().replace("file://", "")]
+        command: ["/bin/sh", Qt.resolvedUrl("scripts/gpu-vram.sh").toString().replace("file://", "")]
         stdout: SplitParser { splitMarker: "\n"; onRead: d => { if (d.trim()) bar.gpuVram = d.trim() } }
     }
     Process {
         id: netProc
-        command: ["/bin/bash", Qt.resolvedUrl("scripts/net.sh").toString().replace("file://", "")]
+        command: ["/bin/sh", Qt.resolvedUrl("scripts/net.sh").toString().replace("file://", "")]
         stdout: SplitParser {
             splitMarker: "\n"
             onRead: d => {
@@ -251,7 +251,7 @@ PanelWindow {
     // ── Active window title ───────────────────────────────────────────────────
     Process {
         id: winTitleProc
-        command: ["bash", "-c", "hyprctl activewindow -j | jq -r '.title // empty'"]
+        command: ["sh", "-c", "hyprctl activewindow -j | jq -r '.title // empty'"]
         running: true
         stdout: SplitParser {
             splitMarker: "\n"
@@ -731,7 +731,7 @@ PanelWindow {
 
     function powerMenu() {
         var proc = Qt.createQmlObject(
-            'import Quickshell.Io; Process { command: ["/bin/bash", "-c", "$HOME/.config/quickshell/scripts/powermenu.sh"] }',
+            'import Quickshell.Io; Process { command: ["/bin/sh", "-c", "$HOME/.config/quickshell/scripts/powermenu.sh"] }',
             bar
         )
         proc.running = true

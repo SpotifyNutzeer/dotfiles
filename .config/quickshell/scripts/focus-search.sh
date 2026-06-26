@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/bin/sh
 # Open search
 echo 1 > /tmp/qs-search-toggle
 sleep 0.2

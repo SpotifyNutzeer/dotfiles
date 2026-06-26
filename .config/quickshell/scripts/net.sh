@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/bin/sh
 iface=enp14s0
 r1=$(cat /sys/class/net/$iface/statistics/rx_bytes)
 t1=$(cat /sys/class/net/$iface/statistics/tx_bytes)

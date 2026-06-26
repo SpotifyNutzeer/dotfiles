@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/bin/sh
 # Schaltet das Quickshell-Theme um.
 #   theme-switch.sh toggle   -> wechselt zwischen Mocha und Liquidglass
 #   theme-switch.sh menu     -> Rofi-Auswahl

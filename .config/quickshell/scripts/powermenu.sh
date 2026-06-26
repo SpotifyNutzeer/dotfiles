@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/bin/sh
 
 LOCK="󰌾 Sperren"
 SUSPEND="󰤄 Ruhezustand"
