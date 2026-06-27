@@ -1,129 +1,241 @@
-# NixOS-Install Runbook (RTX-4090-Desktop, Dual-Boot neben Arch)
+# NixOS Clean-Install Runbook — Desktop (Ryzen 9 9950X3D / RTX 4090)
 
-> **Ziel:** NixOS auf den frei werdenden Windows-Platz von `nvme1n1`, eigener
-> systemd-boot, Arch bleibt unangetastet als Fallback. OS-Wahl per
-> Firmware-Bootmenü.
->
-> **Repo:** `https://github.com/<dein-user>/<nixos-repo>` ← hier eintragen!
+> **Ziel:** Arch komplett platt machen, NixOS sauber neu installieren.
+> Beide NVMe als **btrfs**.
+> **Repo:** `git@github.com:SpotifyNutzeer/nixos.git` (Flake, Host `desktop`)
 
 ---
 
-## ⚠️ Disk-Layout (auswendig kennen, bevor du partitionierst)
+## ⚠️⚠️ DATENVERLUST — VORHER LESEN
 
-| Device | Größe | Inhalt | Aktion |
-|---|---|---|---|
-| `nvme0n1` | 932 G | **Arch komplett** (ESP + root) | **NICHTS anfassen** |
-| `nvme1n1p1` | **2,6 T btrfs** | **Arch `/home`** | **🚫 NIEMALS anfassen** |
-| `nvme1n1p2` | 16 M | MS Reserved | löschen |
-| `nvme1n1p3` | ~1 T ntfs | Windows C: | löschen |
-| `nvme1n1p4` | 785 M | Win Recovery | löschen |
+Dieses Runbook **löscht BEIDE NVMe vollständig**, inklusive der **Arch-`/home`** auf der 4-TB-Platte. Es gibt danach **kein** Zurück.
 
-**Nur `nvme1n1` p2/p3/p4 löschen. Die 2,6-T-Partition (`p1`) ist dein Home.**
+**Bevor du irgendwas anfasst:**
+- [ ] `~/git/nixos` committet **und gepusht** (`git push`) — sonst ist deine Config weg.
+- [ ] `~/git/dotfiles` committet **und gepusht** (Flake-Input + dieses Runbook).
+- [ ] Alles aus `~` gesichert, was du behalten willst (Dokumente, Wallpaper, Saves, `~/.ssh`, GPG-Keys…). Die 4-TB-`/home` wird gelöscht.
+- [ ] CoolerControl-Config ist schon im Repo (`hosts/desktop/coolercontrol/`), wird per Seed wiederhergestellt.
 
 ---
 
-## 0. Letzter Backup-Check
-SSH-/GPG-Keys und alles Lokal-only gesichert? Der Plan fasst `/home` nicht an —
-aber es liegt auf derselben Disk wie die zu löschenden Partitionen.
+## Disk-Layout (Ziel)
 
-## 1. Stick booten & root werden
-USB im **Firmware-Bootmenü** wählen (UEFI). Terminal auf:
-```bash
-sudo -i
-ping -c2 nixos.org      # Internet da?
-```
-> Falls die Live-GUI mit dem 4090/nouveau zickt: **Strg+Alt+F3** → TTY, gleiche Schritte.
+| Disk (by-id) | Größe | Partition | FS | Mount |
+|---|---|---|---|---|
+| `nvme-CT1000T700SSD3_2321E6DB0D4C` | 1 TB | `-part1` (1 GiB) | FAT32 | `/boot` (ESP) |
+| | | `-part2` (Rest) | btrfs | `/`, `/nix`, `/var/log` |
+| `nvme-CT4000P310SSD8_2518500EC39B` | 4 TB | `-part1` (ganz) | btrfs | `/home` |
 
-## 2. ⚠️ Disks identifizieren
-```bash
-lsblk
-```
-Gegen die Tabelle oben prüfen. `nvme0n1` = Arch → in Ruhe lassen.
-`nvme1n1p1` (2,6 T) = `/home` → **NIEMALS**.
+**btrfs-Subvolumes:** 1 TB → `@` (/), `@nix` (/nix), `@log` (/var/log) · 4 TB → `@home` (/home)
+**Kein Disk-Swap** — die Config nutzt zram (`gaming.nix`).
 
-## 3. Partitionieren (visuell, damit du `/home` siehst)
-```bash
-cfdisk /dev/nvme1n1
-```
-- **Lösche** nur `p2`, `p3`, `p4` (16M / ~1T / 785M — **nicht** die 2,6T!).
-- Im freien Platz neu anlegen:
-  - **1 GB** → Typ **„EFI System"**
-  - **Rest** → Typ **„Linux filesystem"**
-- **Write** → `yes` → **Quit**.
-- `lsblk` → neue Namen merken (z. B. ESP = `nvme1n1p2`, root = `nvme1n1p3`).
+> **Warum by-id:** Die `/dev/nvme0n1` / `nvme1n1`-Namen **tauschen zwischen Boots**. `by-id` (Modell+Seriennummer) ist stabil. **Niemals** `nvmeXnY` zum Partitionieren benutzen.
 
-## 4. Formatieren (Namen aus Schritt 3!)
-```bash
-mkfs.fat -F32 -n NIXBOOT /dev/nvme1n1p2     # neue 1G-ESP
-mkfs.ext4  -L nixos      /dev/nvme1n1p3     # neue root
+---
+
+## 0. NixOS-Installer booten
+
+1. Aktuelles **NixOS Minimal ISO** auf USB (z. B. mit `dd` von einem anderen Rechner / Ventoy).
+2. Im UEFI vom USB booten (Secure Boot **aus**).
+3. Netzwerk:
+   - **Ethernet:** geht meist automatisch.
+   - **WLAN:** `iwctl` → `station wlan0 connect <SSID>`.
+   - Prüfen: `ping -c2 nixos.org`
+4. Root werden: `sudo -i`
+
+---
+
+## 1. Disks identifizieren & VERIFIZIEREN
+
+```sh
+DISK1=/dev/disk/by-id/nvme-CT1000T700SSD3_2321E6DB0D4C   # 1 TB  -> root+boot
+DISK4=/dev/disk/by-id/nvme-CT4000P310SSD8_2518500EC39B   # 4 TB  -> home
 ```
 
-## 5. Mounten
-```bash
-mount /dev/disk/by-label/nixos /mnt
-mkdir -p /mnt/boot
-mount /dev/disk/by-label/NIXBOOT /mnt/boot
+**Gate — erst weiter, wenn das stimmt** (Größe & Modell müssen passen):
+
+```sh
+lsblk -do NAME,SIZE,MODEL,SERIAL "$(readlink -f $DISK1)" "$(readlink -f $DISK4)"
+```
+Erwartung: `DISK1` = ~932 G Crucial T700, `DISK4` = ~3,6 T Crucial P310.
+Falls die by-id-Namen nicht existieren: `ls /dev/disk/by-id/ | grep nvme` und Variablen anpassen.
+
+---
+
+## 2. Disks komplett wipen
+
+```sh
+wipefs -a "$DISK1" "$DISK4"
+sgdisk --zap-all "$DISK1"
+sgdisk --zap-all "$DISK4"
 ```
 
-## 6. Echte Hardware-Config generieren
-```bash
+---
+
+## 3. Partitionieren
+
+**1 TB — ESP (1 GiB) + btrfs-Root:**
+```sh
+sgdisk -n1:0:+1G -t1:ef00 -c1:ESP   "$DISK1"
+sgdisk -n2:0:0   -t2:8300 -c2:nixos "$DISK1"
+```
+
+**4 TB — eine btrfs-Partition:**
+```sh
+sgdisk -n1:0:0 -t1:8300 -c1:home "$DISK4"
+```
+
+```sh
+partprobe; udevadm settle
+```
+
+---
+
+## 4. Formatieren
+
+```sh
+mkfs.fat -F32 -n ESP "${DISK1}-part1"
+mkfs.btrfs -f -L nixos "${DISK1}-part2"
+mkfs.btrfs -f -L home  "${DISK4}-part1"
+```
+
+---
+
+## 5. Subvolumes anlegen
+
+```sh
+# Root-Disk
+mount "${DISK1}-part2" /mnt
+btrfs subvolume create /mnt/@
+btrfs subvolume create /mnt/@nix
+btrfs subvolume create /mnt/@log
+umount /mnt
+
+# Home-Disk
+mount "${DISK4}-part1" /mnt
+btrfs subvolume create /mnt/@home
+umount /mnt
+```
+
+---
+
+## 6. Mounten (mit Kompression + noatime)
+
+```sh
+OPTS=compress=zstd,noatime
+
+mount -o subvol=@,$OPTS "${DISK1}-part2" /mnt
+mkdir -p /mnt/{boot,nix,var/log,home}
+mount -o subvol=@nix,$OPTS "${DISK1}-part2" /mnt/nix
+mount -o subvol=@log,$OPTS "${DISK1}-part2" /mnt/var/log
+mount -o subvol=@home,$OPTS "${DISK4}-part1" /mnt/home
+mount "${DISK1}-part1" /mnt/boot
+```
+
+Prüfen:
+```sh
+findmnt -R /mnt
+```
+Erwartung: `/` `/nix` `/var/log` auf der 1-TB-btrfs (verschiedene subvol), `/home` auf der 4-TB-btrfs, `/boot` vfat.
+
+---
+
+## 7. hardware-configuration.nix generieren
+
+Erzeugt die korrekten **neuen UUIDs/Subvol-Optionen** für genau dieses Layout:
+
+```sh
 nixos-generate-config --root /mnt
-grep stateVersion /mnt/etc/nixos/configuration.nix   # diesen Wert merken!
+```
+→ schreibt `/mnt/etc/nixos/hardware-configuration.nix`.
+
+---
+
+## 8. Flake holen & hardware-config übernehmen
+
+> **WICHTIG:** Sowohl `nixos` als auch `dotfiles` müssen **public** auf GitHub sein (der Install klont das nixos-Repo per https und der Flake zieht `github:SpotifyNutzeer/dotfiles`). Private Repos → Installer scheitert ohne Token. Falls privat: vorher auf public stellen, oder Repo per USB nach `/mnt/root/nixos` kopieren.
+
+```sh
+# Falls git im Installer fehlt: in eine git-Shell wechseln und ALLE folgenden
+# Befehle dieses Schritts darin ausführen:
+#   nix-shell -p git
+
+git clone https://github.com/SpotifyNutzeer/nixos.git /mnt/root/nixos
+
+# frisch generierte hardware-config ins Repo kopieren (neue UUIDs!)
+cp /mnt/etc/nixos/hardware-configuration.nix \
+   /mnt/root/nixos/hosts/desktop/hardware-configuration.nix
 ```
 
-## 7. Flake-Repo reinholen & finalisieren
-```bash
-git clone https://github.com/<dein-user>/<nixos-repo> /mnt/etc/nixos-config
-cp /mnt/etc/nixos/hardware-configuration.nix /mnt/etc/nixos-config/hosts/desktop/
-cd /mnt/etc/nixos-config
-```
-Edits (mit `vim`/`nano`):
-- **`flake.nix`**: `desktop`-Zeile einkommentieren → `desktop = mkHost "desktop";`
-- **`hosts/desktop/default.nix`**: `system.stateVersion` auf den Wert aus Schritt 6.
-- Platzhalter-`hardware-configuration.nix` ist jetzt durch die echte ersetzt ✓.
+> Der `git tree is dirty`-Hinweis beim Install ist **erwartet & ok** — Nix nimmt bei lokalem Flake den Arbeitsstand (inkl. der geänderten hardware-config).
 
-**⚠️ Flake-Falle — auch im Installer:** alles tracken, sonst sieht der Flake die Dateien nicht:
-```bash
-git add -A
+---
+
+## 9. Installieren
+
+```sh
+nixos-install --flake /mnt/root/nixos#desktop
+```
+- Lädt/baut viel (TidaLuna, Catppuccin, GE-Proton…) → **kann 20–40 min dauern**.
+- Am Ende: **Root-Passwort** setzen, wenn gefragt.
+
+**User-Passwort für `paul`:**
+```sh
+nixos-enter --root /mnt -c 'passwd paul'
 ```
 
-## 8. Installieren
-```bash
-nixos-install --flake /mnt/etc/nixos-config#desktop
-```
-Lädt das ganze System (NVIDIA-Treiber, Hyprland …) — braucht Netz + Zeit.
-Am Ende: **root-Passwort** setzen.
-
-## 9. ⚠️ paul-Passwort (sonst Aussperrung)
-`paul` ist in der Config ohne Passwort (kein Passwort im öffentlichen Repo!).
-Noch im Installer:
-```bash
-nixos-enter --root /mnt
-passwd paul
-exit
-```
+---
 
 ## 10. Reboot
-```bash
+
+```sh
+umount -R /mnt
 reboot
 ```
-Stick ziehen → **Firmware-Bootmenü** → NixOS-Eintrag (bzw. `nvme1n1`) wählen.
-Erster Boot → **TTY-Login** (noch kein Greeter, gewollt). Als `paul` einloggen.
+USB ziehen. Im SDDM-Login die Session **„Hyprland (uwsm-managed)"** wählen (ist Default), als `paul` einloggen.
 
 ---
 
-## Wenn etwas schiefgeht
-- **`nixos-install` bricht mit Eval-Fehler ab** → fast immer vergessenes `git add`
-  (Schritt 7) oder Tippfehler im `desktop`-Host. Fehlermeldung notieren.
-- **Alter Repo-Stand geklont** → letzte Edits vor dem Booten gepusht?
-- **Black Screen beim ersten Boot** → im systemd-boot-Menü die vorige Generation
-  wählen; notfalls Kernel-Param `nomodeset`. Arch-Fallback bleibt jederzeit übers
-  Firmware-Menü erreichbar.
+## 11. Erster Boot — Post-Install
 
-## Danach (nicht mehr im Installer)
-1. Bootet das Basissystem & Login klappt → **melden**, dann gemeinsam:
-   Hyprland vom TTY testen (`Hyprland`), dann greetd / NVIDIA-Wayland / HDR —
-   eine Variable nach der anderen.
-2. Repo sauber einrichten: `git clone … ~/git/nixos`, die neue
-   `hosts/desktop/hardware-configuration.nix` committen & pushen.
-3. `stateVersion` ist gesetzt → **nie wieder ändern**.
+Vieles passiert **automatisch** über die Config:
+- gnome-keyring wird beim Login angelegt/entsperrt.
+- **Tidal:** beim **ersten** Start einmalig Plugin-Permissions akzeptieren → ab dann gespeichert.
+- **CoolerControl:** `config.toml`/`config-ui.json` werden per `systemd.tmpfiles` geseedet → Lüfterkurven da. Prüfen:
+  ```sh
+  for h in /sys/class/hwmon/hwmon*; do cat $h/name; done   # it87952 + it8696 müssen auftauchen
+  systemctl status coolercontrold
+  ```
+- **240 Hz / Monitore:** beim ersten Login greift die HDMI-A-1-240-Hz-Cold-Start-Logik (exec-once) automatisch.
+
+**Repo & SSH wieder einrichten** (für künftige `git push`):
+```sh
+# SSH-Key wiederherstellen (aus Backup) oder neu erzeugen + bei GitHub hinterlegen
+mkdir -p ~/git && cd ~/git
+git clone git@github.com:SpotifyNutzeer/nixos.git     # dein Arbeits-Repo
+```
+Die geänderte `hardware-configuration.nix` (neue UUIDs) committen & pushen, damit sie dauerhaft im Repo ist:
+```sh
+cd ~/git/nixos
+git add hosts/desktop/hardware-configuration.nix
+git commit -m "hardware-config: neues btrfs-Layout (1TB root, 4TB home)"
+git push
+```
+
+---
+
+## Anhang — Troubleshooting
+
+- **it87 lädt nicht / nur ein Chip** → `sudo dmesg | grep -i it87`. Bei „no device"/falscher ID: `force_id` in `hosts/desktop/coolercontrol.nix` setzen (Block ist auskommentiert vorbereitet).
+- **CoolerControl-Kurven fehlen** (Daemon hat Default angelegt) →
+  ```sh
+  sudo systemctl stop coolercontrold
+  sudo rm /etc/coolercontrol/config.toml /etc/coolercontrol/config-ui.json
+  sudo systemd-tmpfiles --create && sudo systemctl start coolercontrold
+  ```
+- **Geräte-UIDs weichen ab** → Profile importieren trotzdem; Lüfter des betroffenen Geräts im GUI einmal neu zuweisen.
+- **Falsche Platte erwischt?** Wenn `lsblk` in Schritt 1 nicht 932 G / 3,6 T + die richtigen Modelle zeigt: **STOP**, by-id-Namen neu prüfen.
+
+## Anhang — später automatisierbar
+
+Dieses manuelle Partitionieren lässt sich mit **disko** deklarativ machen (`disko-install --flake … --disk main $DISK1 …`), dann ist auch das Disk-Layout reproducible. Für jetzt reicht dieses Runbook.
