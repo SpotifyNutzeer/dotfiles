@@ -391,18 +391,18 @@ PanelWindow {
             }
         }
 
-        // ── Music island: track + controls + progress ────────────────────────
+        // ── Music island: track + controls + progress + visualizer ───────────
         Rectangle {
             id: musicIsland
-            anchors.top: parent.top
-            anchors.topMargin: 2
-            x: (leftIsland.x + leftIsland.width + centerIsland.x) / 2 - width / 2
+            anchors { right: rightIsland.left; rightMargin: 8; top: parent.top; topMargin: 2 }
             height:  40
             radius:  Theme.radius
             color:   Theme.panelBg
             border   { color: Theme.borderColor(0.55); width: 2 }
             visible: bar.activePlayer !== null
             width:   musicRow.implicitWidth + 20
+
+            Behavior on width { NumberAnimation { duration: 300; easing.type: Easing.InOutQuad } }
 
             RowLayout {
                 id: musicRow
@@ -561,6 +561,54 @@ PanelWindow {
                     color: Theme.clrSubtext0
                     font   { family: "JetBrainsMono Nerd Font"; pixelSize: 11 }
                 }
+
+                Rectangle {
+                    width: 1; height: 20; color: Theme.clrSurface1
+                    visible: vizContainer.visible
+                }
+
+                // Visualizer
+                Item {
+                    id: vizContainer
+                    implicitWidth:  vizBars.implicitWidth
+                    implicitHeight: 26
+                    opacity: bar.hasAudio ? 1.0 : 0.0
+                    visible: opacity > 0
+                    Layout.alignment: Qt.AlignVCenter
+
+                    Behavior on opacity { NumberAnimation { duration: 700 } }
+
+                    Row {
+                        id: vizBars
+                        anchors.centerIn: parent
+                        spacing: 1
+
+                        Repeater {
+                            model: bar.barValues.length > 0 ? Math.min(bar.barValues.length, 44) : 44
+                            delegate: Item {
+                                required property int index
+                                width:  2
+                                height: 26
+
+                                property real val: (index < bar.barValues.length)
+                                                   ? bar.barValues[index] / 100.0 : 0.0
+
+                                Rectangle {
+                                    anchors { bottom: parent.bottom; horizontalCenter: parent.horizontalCenter }
+                                    width:  parent.width
+                                    height: Math.max(2, parent.height * parent.val)
+                                    radius: 1
+                                    gradient: Gradient {
+                                        orientation: Gradient.Vertical
+                                        GradientStop { position: 0.0; color: Theme.vizBarTop }
+                                        GradientStop { position: 1.0; color: Qt.rgba(Theme.clrSky.r, Theme.clrSky.g, Theme.clrSky.b, 0.4) }
+                                    }
+                                    Behavior on height { NumberAnimation { duration: 55; easing.type: Easing.OutQuad } }
+                                }
+                            }
+                        }
+                    }
+                }
             }
         }
 
@@ -606,52 +654,6 @@ PanelWindow {
                 anchors.fill: parent
                 onClicked: bar.statsToggled()
                 cursorShape: Qt.PointingHandCursor
-            }
-        }
-
-        // ── Visualizer island ────────────────────────────────────────────────
-        Rectangle {
-            id: vizIsland
-            anchors { right: rightIsland.left; rightMargin: 8; top: parent.top; topMargin: 2 }
-            height:  40
-            radius:  Theme.radius
-            color:   Theme.panelBg
-            border   { color: Theme.borderColor(bar.hasAudio ? 0.55 : 0.0); width: 2 }
-            width:   vizBars.implicitWidth + 20
-            opacity: bar.hasAudio ? 1.0 : 0.0
-
-            Behavior on opacity   { NumberAnimation { duration: 700 } }
-            Behavior on border.color { ColorAnimation  { duration: 700 } }
-
-            Row {
-                id: vizBars
-                anchors.centerIn: parent
-                spacing: 1
-
-                Repeater {
-                    model: bar.barValues.length > 0 ? Math.min(bar.barValues.length, 44) : 44
-                    delegate: Item {
-                        required property int index
-                        width:  2
-                        height: 26
-
-                        property real val: (index < bar.barValues.length)
-                                           ? bar.barValues[index] / 100.0 : 0.0
-
-                        Rectangle {
-                            anchors { bottom: parent.bottom; horizontalCenter: parent.horizontalCenter }
-                            width:  parent.width
-                            height: Math.max(2, parent.height * parent.val)
-                            radius: 1
-                            gradient: Gradient {
-                                orientation: Gradient.Vertical
-                                GradientStop { position: 0.0; color: Theme.vizBarTop }
-                                GradientStop { position: 1.0; color: Qt.rgba(Theme.clrSky.r, Theme.clrSky.g, Theme.clrSky.b, 0.4) }
-                            }
-                            Behavior on height { NumberAnimation { duration: 55; easing.type: Easing.OutQuad } }
-                        }
-                    }
-                }
             }
         }
 
