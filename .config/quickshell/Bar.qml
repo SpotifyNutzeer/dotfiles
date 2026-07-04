@@ -62,7 +62,17 @@ PanelWindow {
     // ── Battery (nur Laptop) ───────────────────────────────────────────────────
     property int    batteryCapacity: -1   // -1 = kein Akku / noch nicht gelesen
     property string batteryStatus:   ""   // Charging / Discharging / Full / Not charging
+    property int    batteryMinutes:  -1   // geschaetzte Restlaufzeit; -1 = unbekannt
     readonly property bool batteryCharging: batteryStatus === "Charging" || batteryStatus === "Full"
+
+    // Restlaufzeit als "1h 41m" (Hover-Anzeige). Leer, wenn keine Schaetzung moeglich.
+    readonly property string batteryTimeText: {
+        if (batteryMinutes < 0) return ""
+        var h = Math.floor(batteryMinutes / 60)
+        var m = batteryMinutes % 60
+        var t = h > 0 ? (h + "h " + m + "m") : (m + "m")
+        return batteryCharging ? (t + " bis voll") : ("~" + t + " übrig")
+    }
 
     readonly property string batteryIcon: {
         if (batteryCapacity < 0) return ""
@@ -288,6 +298,7 @@ PanelWindow {
                 var parts = d.trim().split(" ")
                 bar.batteryCapacity = parseInt(parts[0])
                 bar.batteryStatus   = parts[1] || ""
+                bar.batteryMinutes  = parts.length > 2 ? parseInt(parts[2]) : -1
             }
         }
     }
@@ -757,13 +768,39 @@ PanelWindow {
 
                 Rectangle { width: 1; height: 20; color: Theme.clrSurface1 }
 
-                // Battery (nur Laptop)
-                Text {
+                // Battery (nur Laptop) — Restlaufzeit erscheint beim Draufzeigen
+                Item {
                     visible: bar.isLaptop && bar.batteryCapacity >= 0
-                    text:  bar.batteryIcon + " " + bar.batteryCapacity + "%"
-                    color: bar.batteryColor
-                    font  { family: "JetBrainsMono Nerd Font"; pixelSize: 13; bold: true }
                     Layout.alignment: Qt.AlignVCenter
+                    implicitWidth:  batteryRow.implicitWidth
+                    implicitHeight: batteryRow.implicitHeight
+
+                    Row {
+                        id: batteryRow
+                        anchors.verticalCenter: parent.verticalCenter
+                        spacing: 6
+
+                        Text {
+                            text:  bar.batteryIcon + " " + bar.batteryCapacity + "%"
+                            color: bar.batteryColor
+                            font  { family: "JetBrainsMono Nerd Font"; pixelSize: 13; bold: true }
+                            anchors.verticalCenter: parent.verticalCenter
+                        }
+                        Text {
+                            visible: batteryMouse.containsMouse && bar.batteryTimeText.length > 0
+                            text:  bar.batteryTimeText
+                            color: Theme.clrSubtext0
+                            font  { family: "JetBrainsMono Nerd Font"; pixelSize: 11 }
+                            anchors.verticalCenter: parent.verticalCenter
+                        }
+                    }
+
+                    MouseArea {
+                        id: batteryMouse
+                        anchors.fill: parent
+                        hoverEnabled: true
+                        acceptedButtons: Qt.NoButton
+                    }
                 }
                 Rectangle {
                     visible: bar.isLaptop && bar.batteryCapacity >= 0
