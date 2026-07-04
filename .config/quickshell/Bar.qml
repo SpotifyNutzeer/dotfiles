@@ -59,6 +59,25 @@ PanelWindow {
         stdout: SplitParser { splitMarker: "\n"; onRead: d => { if (d.trim()) bar.isLaptop = (d.trim() === "paul-laptop") } }
     }
 
+    // ── Battery (nur Laptop) ───────────────────────────────────────────────────
+    property int    batteryCapacity: -1   // -1 = kein Akku / noch nicht gelesen
+    property string batteryStatus:   ""   // Charging / Discharging / Full / Not charging
+    readonly property bool batteryCharging: batteryStatus === "Charging" || batteryStatus === "Full"
+
+    readonly property string batteryIcon: {
+        if (batteryCapacity < 0) return ""
+        if (batteryCharging)     return "󰂄"   // Ladeblitz
+        var lvls = ["󰂎","󰁺","󰁻","󰁼","󰁽","󰁾","󰁿","󰂀","󰂁","󰂂","󰁹"]  // 0..100 in 10%-Schritten
+        var idx = Math.round(batteryCapacity / 10)
+        return lvls[Math.max(0, Math.min(10, idx))]
+    }
+    readonly property color batteryColor: {
+        if (batteryCharging)         return Theme.clrGreen
+        if (batteryCapacity <= 15)   return Theme.clrRed
+        if (batteryCapacity <= 30)   return Theme.clrYellow
+        return Theme.clrText
+    }
+
     // ── Graph history ────────────────────────────────────────────────────────
     signal statsToggled()
     readonly property real centerIslandWidth: centerIsland.width
@@ -258,6 +277,21 @@ PanelWindow {
         }
     }
 
+    // ── Battery (nur Laptop; auf dem Desktop liefert das Skript nichts) ────────
+    Process {
+        id: batteryProc
+        command: ["/bin/sh", Qt.resolvedUrl("scripts/battery.sh").toString().replace("file://", "")]
+        stdout: SplitParser {
+            splitMarker: "\n"
+            onRead: d => {
+                if (!d.trim()) return
+                var parts = d.trim().split(" ")
+                bar.batteryCapacity = parseInt(parts[0])
+                bar.batteryStatus   = parts[1] || ""
+            }
+        }
+    }
+
     // ── Active window title ───────────────────────────────────────────────────
     Process {
         id: winTitleProc
@@ -283,6 +317,7 @@ PanelWindow {
             if (!gpuTempProc.running)  gpuTempProc.running  = true
             if (!gpuVramProc.running)  gpuVramProc.running  = true
             if (!netProc.running)      netProc.running      = true
+            if (!batteryProc.running)  batteryProc.running  = true
             if (!winTitleProc.running) winTitleProc.running = true
         }
     }
@@ -299,6 +334,7 @@ PanelWindow {
         gpuTempProc.running  = true
         gpuVramProc.running  = true
         netProc.running      = true
+        batteryProc.running  = true
         winTitleProc.running = true
     }
 
@@ -720,6 +756,19 @@ PanelWindow {
                 }
 
                 Rectangle { width: 1; height: 20; color: Theme.clrSurface1 }
+
+                // Battery (nur Laptop)
+                Text {
+                    visible: bar.isLaptop && bar.batteryCapacity >= 0
+                    text:  bar.batteryIcon + " " + bar.batteryCapacity + "%"
+                    color: bar.batteryColor
+                    font  { family: "JetBrainsMono Nerd Font"; pixelSize: 13; bold: true }
+                    Layout.alignment: Qt.AlignVCenter
+                }
+                Rectangle {
+                    visible: bar.isLaptop && bar.batteryCapacity >= 0
+                    width: 1; height: 20; color: Theme.clrSurface1
+                }
 
                 // Clock
                 Text {
