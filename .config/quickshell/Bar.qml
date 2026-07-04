@@ -799,11 +799,12 @@ PanelWindow {
 
                 Rectangle { width: 1; height: 20; color: Theme.clrSurface1 }
 
-                // Battery (nur Laptop): Icon + % , geglaettete Leistung (W), Restlaufzeit
+                // Battery (nur Laptop): ein Modul, aber Prozent/Watt/Zeit durch
+                // eigene Farbe (+ Blitz-Icon bei Watt) statt nur Leerzeichen getrennt.
                 Row {
                     visible: bar.isLaptop && bar.batteryCapacity >= 0
                     Layout.alignment: Qt.AlignVCenter
-                    spacing: 6
+                    spacing: 10
 
                     Text {
                         text:  bar.batteryIcon + " " + bar.batteryCapacity + "%"
@@ -813,8 +814,8 @@ PanelWindow {
                     }
                     Text {
                         visible: bar.batteryPowerW > 0
-                        text:  Math.round(bar.batteryPowerW) + "W"
-                        color: Theme.clrSubtext0
+                        text:  "󱐋 " + Math.round(bar.batteryPowerW) + "W"
+                        color: Theme.clrPeach
                         font  { family: "JetBrainsMono Nerd Font"; pixelSize: 12 }
                         anchors.verticalCenter: parent.verticalCenter
                     }
