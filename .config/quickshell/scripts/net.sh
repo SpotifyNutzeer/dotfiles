@@ -1,5 +1,9 @@
 #!/bin/sh
-iface=enp14s0
+# Interface der Default-Route automatisch waehlen (Desktop-Ethernet wie Laptop-WLAN).
+iface=$(ip route show default 2>/dev/null | awk '{print $5; exit}')
+# Fallback: erstes hochgefahrenes, nicht-virtuelles Interface
+[ -z "$iface" ] && iface=$(ls /sys/class/net | grep -vE '^(lo|docker|veth|virbr|br-|tun|tap)' | head -1)
+[ -z "$iface" ] && { echo "0K 0K"; exit; }
 r1=$(cat /sys/class/net/$iface/statistics/rx_bytes)
 t1=$(cat /sys/class/net/$iface/statistics/tx_bytes)
 sleep 1

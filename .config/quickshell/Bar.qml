@@ -49,6 +49,16 @@ PanelWindow {
     property string clockTime:   Qt.formatTime(new Date(), "hh:mm")
     property string windowTitle: ""
 
+    // ── Host ─────────────────────────────────────────────────────────────────
+    // Auf dem Laptop wird die Media-Island ausgeblendet (zu wenig Platz).
+    property bool isLaptop: false
+    Process {
+        id: hostnameProc
+        command: ["/bin/sh", "-c", "hostname"]
+        running: true
+        stdout: SplitParser { splitMarker: "\n"; onRead: d => { if (d.trim()) bar.isLaptop = (d.trim() === "paul-laptop") } }
+    }
+
     // ── Graph history ────────────────────────────────────────────────────────
     signal statsToggled()
     readonly property real centerIslandWidth: centerIsland.width
@@ -399,7 +409,7 @@ PanelWindow {
             radius:  Theme.radius
             color:   Theme.panelBg
             border   { color: Theme.borderColor(0.55); width: 2 }
-            visible: bar.activePlayer !== null
+            visible: bar.activePlayer !== null && !bar.isLaptop
             width:   musicRow.implicitWidth + 20
 
             Behavior on width { NumberAnimation { duration: 300; easing.type: Easing.InOutQuad } }
