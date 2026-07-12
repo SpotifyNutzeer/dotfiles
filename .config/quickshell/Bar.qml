@@ -49,6 +49,68 @@ PanelWindow {
     property string clockTime:   Qt.formatTime(new Date(), "hh:mm")
     property string windowTitle: ""
 
+    // ── Host ─────────────────────────────────────────────────────────────────
+    // Auf dem Laptop wird die Media-Island ausgeblendet (zu wenig Platz).
+    property bool isLaptop: false
+    Process {
+        id: hostnameProc
+        command: ["/bin/sh", "-c", "hostname"]
+        running: true
+        stdout: SplitParser { splitMarker: "\n"; onRead: d => { if (d.trim()) bar.isLaptop = (d.trim() === "paul-laptop") } }
+    }
+
+    // ── Battery (nur Laptop) ───────────────────────────────────────────────────
+    property int    batteryCapacity:   -1   // -1 = kein Akku / noch nicht gelesen
+    property string batteryStatus:     ""   // Charging / Discharging / Full / Not charging
+    property real   batteryEnergyNow:  0    // µWh
+    property real   batteryEnergyFull: 0    // µWh
+    property var    batteryPowerHistory: [] // letzte Leistungswerte (µW) fuer die Glaettung
+    readonly property bool batteryCharging: batteryStatus === "Charging" || batteryStatus === "Full"
+
+    // Geglaettete Leistung in Watt (gleitender Mittel ueber die History). Battery-
+    // Leistung schwankt stark; der Mittelwert beruhigt Anzeige und Schaetzung.
+    readonly property real batteryPowerW: {
+        var h = batteryPowerHistory
+        if (h.length === 0) return 0
+        var sum = 0
+        for (var i = 0; i < h.length; i++) sum += h[i]
+        return (sum / h.length) / 1e6
+    }
+
+    // Restlaufzeit in Minuten aus geglaetteter Leistung; -1 = unbekannt.
+    readonly property int batteryMinutes: {
+        if (batteryPowerW <= 0) return -1
+        var pw = batteryPowerW * 1e6   // zurueck in µW
+        if (batteryStatus === "Discharging" && batteryEnergyNow > 0)
+            return Math.round(batteryEnergyNow / pw * 60)
+        if (batteryStatus === "Charging" && batteryEnergyFull > batteryEnergyNow)
+            return Math.round((batteryEnergyFull - batteryEnergyNow) / pw * 60)
+        return -1
+    }
+
+    // Restlaufzeit als "1h 41m". Leer, wenn keine Schaetzung moeglich.
+    readonly property string batteryTimeText: {
+        if (batteryMinutes < 0) return ""
+        var h = Math.floor(batteryMinutes / 60)
+        var m = batteryMinutes % 60
+        var t = h > 0 ? (h + "h " + m + "m") : (m + "m")
+        return batteryCharging ? (t + " bis voll") : ("~" + t + " übrig")
+    }
+
+    readonly property string batteryIcon: {
+        if (batteryCapacity < 0) return ""
+        if (batteryCharging)     return "󰂄"   // Ladeblitz
+        var lvls = ["󰂎","󰁺","󰁻","󰁼","󰁽","󰁾","󰁿","󰂀","󰂁","󰂂","󰁹"]  // 0..100 in 10%-Schritten
+        var idx = Math.round(batteryCapacity / 10)
+        return lvls[Math.max(0, Math.min(10, idx))]
+    }
+    readonly property color batteryColor: {
+        if (batteryCharging)         return Theme.clrGreen
+        if (batteryCapacity <= 15)   return Theme.clrRed
+        if (batteryCapacity <= 30)   return Theme.clrYellow
+        return Theme.clrText
+    }
+
     // ── Graph history ────────────────────────────────────────────────────────
     signal statsToggled()
     readonly property real centerIslandWidth: centerIsland.width
@@ -248,6 +310,30 @@ PanelWindow {
         }
     }
 
+    // ── Battery (nur Laptop; auf dem Desktop liefert das Skript nichts) ────────
+    Process {
+        id: batteryProc
+        command: ["/bin/sh", Qt.resolvedUrl("scripts/battery.sh").toString().replace("file://", "")]
+        stdout: SplitParser {
+            splitMarker: "\n"
+            onRead: d => {
+                if (!d.trim()) return
+                var parts = d.trim().split(" ")
+                bar.batteryCapacity   = parseInt(parts[0])
+                bar.batteryStatus     = parts[1] || ""
+                var pw = parts.length > 2 ? (parseFloat(parts[2]) || 0) : 0   // µW
+                bar.batteryEnergyNow  = parts.length > 3 ? (parseFloat(parts[3]) || 0) : 0
+                bar.batteryEnergyFull = parts.length > 4 ? (parseFloat(parts[4]) || 0) : 0
+                if (pw > 0) {
+                    var h = bar.batteryPowerHistory.slice()
+                    h.push(pw)
+                    while (h.length > 15) h.shift()   // ~30 s Fenster (Poll alle 2 s)
+                    bar.batteryPowerHistory = h
+                }
+            }
+        }
+    }
+
     // ── Active window title ───────────────────────────────────────────────────
     Process {
         id: winTitleProc
@@ -273,6 +359,7 @@ PanelWindow {
             if (!gpuTempProc.running)  gpuTempProc.running  = true
             if (!gpuVramProc.running)  gpuVramProc.running  = true
             if (!netProc.running)      netProc.running      = true
+            if (!batteryProc.running)  batteryProc.running  = true
             if (!winTitleProc.running) winTitleProc.running = true
         }
     }
@@ -289,6 +376,7 @@ PanelWindow {
         gpuTempProc.running  = true
         gpuVramProc.running  = true
         netProc.running      = true
+        batteryProc.running  = true
         winTitleProc.running = true
     }
 
@@ -399,7 +487,7 @@ PanelWindow {
             radius:  Theme.radius
             color:   Theme.panelBg
             border   { color: Theme.borderColor(0.55); width: 2 }
-            visible: bar.activePlayer !== null
+            visible: bar.activePlayer !== null && !bar.isLaptop
             width:   musicRow.implicitWidth + 20
 
             Behavior on width { NumberAnimation { duration: 300; easing.type: Easing.InOutQuad } }
@@ -710,6 +798,39 @@ PanelWindow {
                 }
 
                 Rectangle { width: 1; height: 20; color: Theme.clrSurface1 }
+
+                // Battery (nur Laptop): ein Modul, aber Prozent/Watt/Zeit durch
+                // eigene Farbe (+ Blitz-Icon bei Watt) statt nur Leerzeichen getrennt.
+                Row {
+                    visible: bar.isLaptop && bar.batteryCapacity >= 0
+                    Layout.alignment: Qt.AlignVCenter
+                    spacing: 10
+
+                    Text {
+                        text:  bar.batteryIcon + " " + bar.batteryCapacity + "%"
+                        color: bar.batteryColor
+                        font  { family: "JetBrainsMono Nerd Font"; pixelSize: 13; bold: true }
+                        anchors.verticalCenter: parent.verticalCenter
+                    }
+                    Text {
+                        visible: bar.batteryPowerW > 0
+                        text:  "󱐋 " + Math.round(bar.batteryPowerW) + "W"
+                        color: Theme.clrPeach
+                        font  { family: "JetBrainsMono Nerd Font"; pixelSize: 12 }
+                        anchors.verticalCenter: parent.verticalCenter
+                    }
+                    Text {
+                        visible: bar.batteryTimeText.length > 0
+                        text:  bar.batteryTimeText
+                        color: Theme.clrSubtext0
+                        font  { family: "JetBrainsMono Nerd Font"; pixelSize: 12 }
+                        anchors.verticalCenter: parent.verticalCenter
+                    }
+                }
+                Rectangle {
+                    visible: bar.isLaptop && bar.batteryCapacity >= 0
+                    width: 1; height: 20; color: Theme.clrSurface1
+                }
 
                 // Clock
                 Text {
