@@ -5,7 +5,7 @@ Item {
     id: btn
 
     property string icon:      ""
-    property color  iconColor: "#cdd6f4"
+    property color  iconColor: Theme.clrText
 
     signal clicked()
 

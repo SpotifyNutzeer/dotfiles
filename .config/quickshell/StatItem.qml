@@ -4,8 +4,8 @@ import QtQuick.Layouts
 RowLayout {
     property string icon:      ""
     property string value:     ""
-    property color  iconColor: "#cdd6f4"
-    property color  textColor: "#cdd6f4"
+    property color  iconColor: Theme.clrText
+    property color  textColor: Theme.clrText
     // >0: reserviert feste Breite für so viele Monospace-Zeichen, damit der
     // Wert beim Wechsel der Stellenzahl die Bar nicht springen lässt.
     property int    valueChars: 0

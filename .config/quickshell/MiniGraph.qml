@@ -4,7 +4,7 @@ import QtQuick.Layouts
 ColumnLayout {
     id: root
     property var    history:   []
-    property color  lineColor: "#89b4fa"
+    property color  lineColor: Theme.clrBlue
     property string label:     ""
     property real   maxValue:  100
     property bool   showLabel: true

@@ -16,13 +16,13 @@ Item {
     Rectangle {
         anchors.fill: parent
         radius: 12
-        color: ma.containsMouse ? Qt.rgba(180, 190, 254, 0.15) : "transparent"
+        color: ma.containsMouse ? Qt.rgba(0.706, 0.745, 0.996, 0.15) : "transparent"
         
         Behavior on color { ColorAnimation { duration: 150 } }
 
         // Subtle border on hover
         border {
-            color: ma.containsMouse ? Qt.rgba(180, 190, 254, 0.3) : "transparent"
+            color: ma.containsMouse ? Qt.rgba(0.706, 0.745, 0.996, 0.3) : "transparent"
             width: 1
         }
     }
@@ -73,7 +73,7 @@ Item {
         Text {
             visible: ma.containsMouse
             text: "󰌑"
-            color: Qt.rgba(180, 190, 254, 0.5)
+            color: Qt.rgba(0.706, 0.745, 0.996, 0.5)
             font { family: "JetBrainsMono Nerd Font"; pixelSize: 12 }
         }
     }

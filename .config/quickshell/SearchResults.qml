@@ -83,11 +83,11 @@ PanelWindow {
         height: Math.min(mainCol.implicitHeight + 24, 450)
         x: 20
         y: 60
-        color: "#181825"
-        radius: 16
+        color: Theme.searchBg
+        radius: Theme.searchRadius
         border {
             color: "#313244"
-            width: 2
+            width: Theme.searchBorderWidth
         }
 
         ColumnLayout {
