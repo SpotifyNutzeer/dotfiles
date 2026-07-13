@@ -10,3 +10,6 @@ vfio/*.fd
 .config/fish/themes/
 .config/fish/fish_variables
 .config/tmux/plugins/
+
+# Superpowers-Brainstorming: temporäre Mockups des Visual Companion
+.superpowers/
