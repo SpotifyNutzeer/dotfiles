@@ -15,7 +15,7 @@ PanelWindow {
 
     screen: Quickshell.screens[0]
     anchors { top: true; left: true; bottom: true }
-    margins { top: 8; left: 12; bottom: 8 }
+    margins { top: Theme.sidePanelMarginTop; left: Theme.sidePanelMarginLeft; bottom: Theme.sidePanelMarginBottom }
     implicitWidth: 300
     color: "transparent"
     visible: panelOpen || hideTimer.running
@@ -98,8 +98,16 @@ PanelWindow {
             x: panel.panelOpen ? 0 : -parent.width
             Behavior on x { NumberAnimation { duration: 300; easing.type: Easing.OutCubic } }
             color: Theme.panelBgDeep
-            radius: 16
-            border { color: Theme.borderColor(0.15); width: 1 }
+            radius: Theme.panelRadius
+            border { color: Theme.borderColor(0.15); width: Theme.sidePanelBorderWidth }
+
+            // Zen: linke Kante eckig — das Panel geht nahtlos in den Frame über.
+            Rectangle {
+                visible: Theme.zen
+                anchors { left: parent.left; top: parent.top; bottom: parent.bottom }
+                width: parent.radius
+                color: parent.color
+            }
 
             ColumnLayout {
                 anchors { fill: parent; margins: 14 }
