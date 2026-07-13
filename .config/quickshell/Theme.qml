@@ -131,4 +131,33 @@ Singleton {
     // ── Zen: Motion ───────────────────────────────────────────────────
     readonly property int durFast:   200   // Farbe/Opacity
     readonly property int durNormal: 350   // Position/Größe (mit Überschwingen)
+
+    // ── Hyprland-Kopplung ─────────────────────────────────────────────
+    // Zen passt die Fenster-Deko an (Gaps machen Platz für den Frame, solider
+    // Teal-Border statt rotierendem Gradient, Rounding harmonisiert mit dem
+    // Viewport). Restore-Werte MÜSSEN zu ~/git/nixos/home/program-configs/
+    // linux/hyprland.nix passen. Läuft auch beim Start → selbstheilend.
+    readonly property string hyprZen:
+        "keyword general:gaps_out 6,16,16,16 ; " +
+        "keyword general:col.active_border rgb(94e2d5) ; " +
+        "keyword decoration:rounding 12"
+    readonly property string hyprRestore:
+        "keyword general:gaps_out 10 ; " +
+        "keyword general:col.active_border rgb(89dceb) rgb(94e2d5) 45deg ; " +
+        "keyword decoration:rounding 10"
+
+    Process {
+        id: hyprProc
+        // command wird vor jedem Start gesetzt; stale-Prozess unkritisch.
+    }
+    function applyHyprland() {
+        // Absichtlich variant === "zen" statt der readonly-property "zen":
+        // beim Feuern von onVariantChanged ist die abhängige Bindung "zen"
+        // hier noch nicht aktualisiert (ein Tick stale in beide Richtungen),
+        // dadurch würde sonst immer der VORHERIGE Zustand angewendet.
+        hyprProc.command = ["hyprctl", "--batch", variant === "zen" ? hyprZen : hyprRestore]
+        hyprProc.running = true
+    }
+    onVariantChanged: applyHyprland()
+    Component.onCompleted: applyHyprland()
 }
