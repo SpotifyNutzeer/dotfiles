@@ -28,10 +28,10 @@ PanelWindow {
     }
 
     anchors { top: true; left: true; right: true }
-    margins { top: 10; left: 10; right: 10 }
-    implicitHeight: 44
-    exclusiveZone:  44
-    color: "transparent"
+    margins { top: Theme.barMargin; left: Theme.barMargin; right: Theme.barMargin }
+    implicitHeight: Theme.barHeight
+    exclusiveZone:  Theme.barHeight
+    color: Theme.barBg
 
     // ── Stats state ──────────────────────────────────────────────────────────
     property string cpuUsage:  "0"
@@ -390,8 +390,8 @@ PanelWindow {
             anchors { left: parent.left; top: parent.top; topMargin: 2 }
             height: 40
             radius: Theme.radius
-            color: Theme.panelBg
-            border { color: Theme.borderColor(0.55); width: 2 }
+            color: Theme.islandBg
+            border { color: Theme.borderColor(0.55); width: Theme.islandBorderWidth }
             clip: true
             width: leftRow.implicitWidth + 16
 
@@ -435,14 +435,14 @@ PanelWindow {
                 // Side panel toggle
                 BarButton {
                     icon:      "󰍜"
-                    iconColor: Theme.clrBlue
+                    iconColor: Theme.statIcon(Theme.clrBlue)
                     onClicked: bar.panelToggled()
                 }
 
                 // Rofi launcher button
                 BarButton {
                     icon:      "󰍉"
-                    iconColor: Theme.clrSky
+                    iconColor: Theme.statIcon(Theme.clrSky)
                     onClicked: bar.launchRofi()
                 }
             }
@@ -454,8 +454,8 @@ PanelWindow {
             anchors { left: leftIsland.right; leftMargin: 8; top: parent.top; topMargin: 2 }
             height:  40
             radius:  Theme.radius
-            color:   Theme.panelBg
-            border   { color: Theme.borderColor(0.55); width: 2 }
+            color:   Theme.islandBg
+            border   { color: Theme.borderColor(0.55); width: Theme.islandBorderWidth }
             visible: bar.windowTitle.length > 0
             implicitWidth: Math.min(winRow.implicitWidth + 20, 280)
             clip: true
@@ -466,7 +466,7 @@ PanelWindow {
                 spacing: 6
                 Text {
                     text:  "󰖯"
-                    color: Theme.clrBlue
+                    color: Theme.statIcon(Theme.clrBlue)
                     font   { family: "JetBrainsMono Nerd Font"; pixelSize: 13 }
                 }
                 Text {
@@ -485,8 +485,8 @@ PanelWindow {
             anchors { right: rightIsland.left; rightMargin: 8; top: parent.top; topMargin: 2 }
             height:  40
             radius:  Theme.radius
-            color:   Theme.panelBg
-            border   { color: Theme.borderColor(0.55); width: 2 }
+            color:   Theme.islandBg
+            border   { color: Theme.borderColor(0.55); width: Theme.islandBorderWidth }
             visible: bar.activePlayer !== null && !bar.isLaptop
             width:   musicRow.implicitWidth + 20
 
@@ -500,7 +500,7 @@ PanelWindow {
                 // Icon (klick öffnet Overlay)
                 Text {
                     text:  "󰝚"
-                    color: Theme.clrMauve
+                    color: Theme.statIcon(Theme.clrMauve)
                     font   { family: "JetBrainsMono Nerd Font"; pixelSize: 13 }
                     MouseArea {
                         anchors.fill: parent
@@ -566,7 +566,7 @@ PanelWindow {
                     }
                 }
 
-                Rectangle { width: 1; height: 20; color: Theme.clrSurface1 }
+                Rectangle { width: 1; height: 20; color: Theme.clrSurface1; visible: Theme.sepVisible }
 
                 // Controls
                 Text {
@@ -604,7 +604,7 @@ PanelWindow {
                     }
                 }
 
-                Rectangle { width: 1; height: 20; color: Theme.clrSurface1 }
+                Rectangle { width: 1; height: 20; color: Theme.clrSurface1; visible: Theme.sepVisible }
 
                 // Progress
                 Text {
@@ -652,7 +652,7 @@ PanelWindow {
 
                 Rectangle {
                     width: 1; height: 20; color: Theme.clrSurface1
-                    visible: vizContainer.visible
+                    visible: Theme.sepVisible && vizContainer.visible
                 }
 
                 // Visualizer
@@ -706,8 +706,8 @@ PanelWindow {
             anchors { horizontalCenter: parent.horizontalCenter; top: parent.top; topMargin: 2 }
             height: 40
             radius: Theme.radius
-            color: Theme.panelBg
-            border { color: Theme.borderColor(0.55); width: 2 }
+            color: Theme.islandBg
+            border { color: Theme.borderColor(0.55); width: Theme.islandBorderWidth }
             width: statsRow.implicitWidth + 24
 
             RowLayout {
@@ -715,27 +715,27 @@ PanelWindow {
                 anchors.centerIn: parent
                 spacing: 14
 
-                StatItem { icon: "󰻠"; value: bar.cpuUsage + "%"; valueChars: 4; iconColor: Theme.clrGreen;   textColor: Theme.clrText }
-                StatItem { icon: "󰓅"; value: bar.cpuClock;        valueChars: 7; iconColor: Theme.clrSky;     textColor: Theme.clrText }
-                StatItem { icon: "󱐋"; value: bar.cpuPower;        valueChars: 4; iconColor: Theme.clrPeach;   textColor: Theme.clrText }
-                StatItem { icon: "󰔏"; value: bar.cpuTemp + "°C";  valueChars: 4; iconColor: Theme.clrYellow;  textColor: Theme.clrText }
+                StatItem { icon: "󰻠"; value: bar.cpuUsage + "%"; valueChars: 4; iconColor: Theme.statIcon(Theme.clrGreen);   textColor: Theme.clrText }
+                StatItem { icon: "󰓅"; value: bar.cpuClock;        valueChars: 7; iconColor: Theme.statIcon(Theme.clrSky);     textColor: Theme.clrText }
+                StatItem { icon: "󱐋"; value: bar.cpuPower;        valueChars: 4; iconColor: Theme.statIcon(Theme.clrPeach);   textColor: Theme.clrText }
+                StatItem { icon: "󰔏"; value: bar.cpuTemp + "°C";  valueChars: 4; iconColor: Theme.statIcon(Theme.clrYellow);  textColor: Theme.clrText }
 
-                Rectangle { width: 1; height: 20; color: Theme.clrSurface1 }
+                Rectangle { width: 1; height: 20; color: Theme.clrSurface1; visible: Theme.sepVisible }
 
-                StatItem { icon: "󰍛"; value: bar.ramUsed + "G";   valueChars: 5; iconColor: Theme.clrMauve;   textColor: Theme.clrText }
+                StatItem { icon: "󰍛"; value: bar.ramUsed + "G";   valueChars: 5; iconColor: Theme.statIcon(Theme.clrMauve);   textColor: Theme.clrText }
 
-                Rectangle { width: 1; height: 20; color: Theme.clrSurface1 }
+                Rectangle { width: 1; height: 20; color: Theme.clrSurface1; visible: Theme.sepVisible }
 
-                StatItem { icon: "󰢮"; value: bar.gpuUsage + "%";  valueChars: 4; iconColor: Theme.clrTeal;    textColor: Theme.clrText }
-                StatItem { icon: "󰓅"; value: bar.gpuClock;         valueChars: 7; iconColor: Theme.clrSky;     textColor: Theme.clrText }
-                StatItem { icon: "󱐋"; value: bar.gpuPower;         valueChars: 4; iconColor: Theme.clrPeach;   textColor: Theme.clrText }
-                StatItem { icon: "󰔏"; value: bar.gpuTemp + "°C";   valueChars: 4; iconColor: Theme.clrYellow;  textColor: Theme.clrText }
-                StatItem { icon: "󰆧"; value: bar.gpuVram;          valueChars: 6; iconColor: Theme.clrSky;     textColor: Theme.clrText }
+                StatItem { icon: "󰢮"; value: bar.gpuUsage + "%";  valueChars: 4; iconColor: Theme.statIcon(Theme.clrTeal);    textColor: Theme.clrText }
+                StatItem { icon: "󰓅"; value: bar.gpuClock;         valueChars: 7; iconColor: Theme.statIcon(Theme.clrSky);     textColor: Theme.clrText }
+                StatItem { icon: "󱐋"; value: bar.gpuPower;         valueChars: 4; iconColor: Theme.statIcon(Theme.clrPeach);   textColor: Theme.clrText }
+                StatItem { icon: "󰔏"; value: bar.gpuTemp + "°C";   valueChars: 4; iconColor: Theme.statIcon(Theme.clrYellow);  textColor: Theme.clrText }
+                StatItem { icon: "󰆧"; value: bar.gpuVram;          valueChars: 6; iconColor: Theme.statIcon(Theme.clrSky);     textColor: Theme.clrText }
 
-                Rectangle { width: 1; height: 20; color: Theme.clrSurface1 }
+                Rectangle { width: 1; height: 20; color: Theme.clrSurface1; visible: Theme.sepVisible }
 
-                StatItem { icon: "󰁆"; value: bar.netDown; valueChars: 5; iconColor: Theme.clrBlue;     textColor: Theme.clrText }
-                StatItem { icon: "󰁞"; value: bar.netUp;   valueChars: 5; iconColor: Theme.clrSapphire; textColor: Theme.clrText }
+                StatItem { icon: "󰁆"; value: bar.netDown; valueChars: 5; iconColor: Theme.statIcon(Theme.clrBlue);     textColor: Theme.clrText }
+                StatItem { icon: "󰁞"; value: bar.netUp;   valueChars: 5; iconColor: Theme.statIcon(Theme.clrSapphire); textColor: Theme.clrText }
             }
 
             MouseArea {
@@ -751,8 +751,8 @@ PanelWindow {
             anchors { right: parent.right; top: parent.top; topMargin: 2 }
             height: 40
             radius: Theme.radius
-            color: Theme.panelBg
-            border { color: Theme.borderColor(0.55); width: 2 }
+            color: Theme.islandBg
+            border { color: Theme.borderColor(0.55); width: Theme.islandBorderWidth }
             width: rightRow.implicitWidth + 16
 
             RowLayout {
@@ -797,7 +797,7 @@ PanelWindow {
                     }
                 }
 
-                Rectangle { width: 1; height: 20; color: Theme.clrSurface1 }
+                Rectangle { width: 1; height: 20; color: Theme.clrSurface1; visible: Theme.sepVisible }
 
                 // Battery (nur Laptop): ein Modul, aber Prozent/Watt/Zeit durch
                 // eigene Farbe (+ Blitz-Icon bei Watt) statt nur Leerzeichen getrennt.
@@ -828,19 +828,19 @@ PanelWindow {
                     }
                 }
                 Rectangle {
-                    visible: bar.isLaptop && bar.batteryCapacity >= 0
+                    visible: Theme.sepVisible && bar.isLaptop && bar.batteryCapacity >= 0
                     width: 1; height: 20; color: Theme.clrSurface1
                 }
 
                 // Clock
                 Text {
                     text:  "󰃰 " + bar.clockTime
-                    color: Theme.clrPink
+                    color: Theme.clockColor
                     font  { family: "JetBrainsMono Nerd Font"; pixelSize: 13; bold: true }
                     Layout.alignment: Qt.AlignVCenter
                 }
 
-                Rectangle { width: 1; height: 20; color: Theme.clrSurface1 }
+                Rectangle { width: 1; height: 20; color: Theme.clrSurface1; visible: Theme.sepVisible }
 
                 // Power menu
                 BarButton {
