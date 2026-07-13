@@ -1,6 +1,7 @@
 import Quickshell
 import Quickshell.Services.Notifications
 import QtQuick
+import QtQuick.Effects
 import QtQuick.Layouts
 
 // Transiente Notification-Toasts oben rechts. Hört auf das notification-Signal
@@ -19,7 +20,7 @@ PanelWindow {
 
     screen: barScreen
     anchors { top: true; right: true }
-    margins { top: 56; right: 14 }
+    margins { top: Theme.notifTop; right: Theme.notifRight }
     exclusiveZone: -1
     color: "transparent"
     visible: popups.length > 0
@@ -62,10 +63,19 @@ PanelWindow {
 
                 width: col.width
                 height: row.implicitHeight + 20
-                radius: Theme.radius
-                color: Theme.panelBgDeep
-                border.width: 1
+                radius: Theme.notifRadius
+                color: Theme.notifBg
+                border.width: toast.critical ? 1 : Theme.notifBorderWidth
                 border.color: toast.critical ? Theme.clrRed : Theme.borderColor(0.3)
+
+                // Zen: weicher Schatten statt Border — Tiefe ohne Linien.
+                layer.enabled: Theme.shadowEnabled
+                layer.effect: MultiEffect {
+                    shadowEnabled: true
+                    shadowColor: Qt.rgba(0, 0, 0, 0.45)
+                    shadowBlur: 0.9
+                    shadowVerticalOffset: 4
+                }
 
                 // Auto-Dismiss des Toasts (nicht des Verlauf-Eintrags).
                 Timer {

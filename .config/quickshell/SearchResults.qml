@@ -2,6 +2,7 @@ import Quickshell
 import Quickshell.Io
 import QtQuick
 import QtQuick.Layouts
+import QtQuick.Effects
 import QtQuick.Controls
 
 PanelWindow {
@@ -88,6 +89,14 @@ PanelWindow {
         border {
             color: "#313244"
             width: Theme.searchBorderWidth
+        }
+
+        layer.enabled: Theme.shadowEnabled
+        layer.effect: MultiEffect {
+            shadowEnabled: true
+            shadowColor: Qt.rgba(0, 0, 0, 0.45)
+            shadowBlur: 0.9
+            shadowVerticalOffset: 4
         }
 
         ColumnLayout {
