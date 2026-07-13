@@ -41,6 +41,8 @@ ShellRoot {
         onMusicToggled: root.musicOpen     = !root.musicOpen
     }
 
+    Frame { }
+
     SidePanel {
         panelOpen: root.sidePanelOpen
         notifServer: notifServer
@@ -89,7 +91,7 @@ ShellRoot {
     PanelWindow {
         screen: mainBar.screen
         anchors { top: true; left: true; right: true; bottom: true }
-        margins { top: 58 }
+        margins { top: Theme.overlayTop }
         exclusiveZone: -1
         color: "transparent"
         visible: root.musicOpen
@@ -103,7 +105,7 @@ ShellRoot {
     PanelWindow {
         screen: mainBar.screen
         anchors { top: true; left: true; right: true; bottom: true }
-        margins { top: 58 }
+        margins { top: Theme.overlayTop }
         exclusiveZone: -1
         color: "transparent"
         visible: root.statsOpen
@@ -123,7 +125,7 @@ ShellRoot {
             bottom: true
         }
         margins {
-            left: 316
+            left: Theme.dismissLeft
         }
         exclusiveZone: -1
         color: "transparent"
