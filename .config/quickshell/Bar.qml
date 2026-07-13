@@ -400,34 +400,113 @@ PanelWindow {
                 anchors.centerIn: parent
                 spacing: 4
 
-                Repeater {
-                    model: {
+                // Gemeinsames, sortiertes Workspace-Modell (IDs 1–10)
+                Item {
+                    id: wsHolder
+                    property var wsList: {
                         var ws = []
-                        for (var i = 0; i < Hyprland.workspaces.length; i++) {
-                            var w = Hyprland.workspaces[i]
+                        var all = Hyprland.workspaces.values
+                        for (var i = 0; i < all.length; i++) {
+                            var w = all[i]
                             if (w.id >= 1 && w.id <= 10) ws.push(w)
                         }
                         ws.sort(function(a, b) { return a.id - b.id })
                         return ws
                     }
-                    delegate: Rectangle {
-                        required property var modelData
-                        property bool isActive: Hyprland.focusedMonitor &&
-                            Hyprland.focusedMonitor.activeWorkspace &&
-                            Hyprland.focusedMonitor.activeWorkspace.id === modelData.id
-                        width: 28; height: 28
-                        radius: 6
-                        color: isActive ? Theme.clrSky : Theme.clrSurface0
-                        Text {
-                            anchors.centerIn: parent
-                            text:  modelData.id
-                            color: parent.isActive ? Theme.clrBase : Theme.clrSubtext0
-                            font  { family: "JetBrainsMono Nerd Font"; pixelSize: 13; bold: parent.isActive }
+                    property int activeIdx: {
+                        var act = Hyprland.focusedMonitor && Hyprland.focusedMonitor.activeWorkspace
+                                  ? Hyprland.focusedMonitor.activeWorkspace.id : -1
+                        for (var i = 0; i < wsList.length; i++)
+                            if (wsList[i].id === act) return i
+                        return -1
+                    }
+                    visible: false
+                }
+
+                // ── Klassische Pills (Mocha / Liquidglass) ────────────────────
+                Row {
+                    spacing: 4
+                    visible: !Theme.zen
+                    Layout.alignment: Qt.AlignVCenter
+
+                    Repeater {
+                        model: wsHolder.wsList
+                        delegate: Rectangle {
+                            required property var modelData
+                            property bool isActive: Hyprland.focusedMonitor &&
+                                Hyprland.focusedMonitor.activeWorkspace &&
+                                Hyprland.focusedMonitor.activeWorkspace.id === modelData.id
+                            width: 28; height: 28
+                            radius: 6
+                            color: isActive ? Theme.clrSky : Theme.clrSurface0
+                            Text {
+                                anchors.centerIn: parent
+                                text:  modelData.id
+                                color: parent.isActive ? Theme.clrBase : Theme.clrSubtext0
+                                font  { family: "JetBrainsMono Nerd Font"; pixelSize: 13; bold: parent.isActive }
+                            }
+                            MouseArea {
+                                anchors.fill: parent
+                                onClicked: Hyprland.dispatch("workspace " + modelData.id)
+                                cursorShape: Qt.PointingHandCursor
+                            }
                         }
-                        MouseArea {
-                            anchors.fill: parent
-                            onClicked: Hyprland.dispatch("workspace " + modelData.id)
-                            cursorShape: Qt.PointingHandCursor
+                    }
+                }
+
+                // ── Zen: Capsule mit gleitendem Teal-Indikator ────────────────
+                Rectangle {
+                    visible: Theme.zen
+                    Layout.alignment: Qt.AlignVCenter
+                    width:  wsRow.width + 6
+                    height: 28
+                    radius: height / 2
+                    color:  Theme.clrSurface0
+
+                    // Indikator hinter den Ziffern: gleitet mit Überschwingen
+                    Rectangle {
+                        id: wsIndicator
+                        visible: wsHolder.activeIdx >= 0
+                        x: 3 + wsHolder.activeIdx * (24 + 4)
+                        y: 3
+                        width: 22; height: 22
+                        radius: height / 2
+                        color: Theme.wsActiveBg
+                        Behavior on x {
+                            NumberAnimation {
+                                duration: Theme.durNormal
+                                easing.type: Easing.OutBack
+                                easing.overshoot: 1.2
+                            }
+                        }
+                    }
+
+                    Row {
+                        id: wsRow
+                        x: 3
+                        anchors.verticalCenter: parent.verticalCenter
+                        spacing: 4
+
+                        Repeater {
+                            model: wsHolder.wsList
+                            delegate: Item {
+                                required property var modelData
+                                required property int index
+                                property bool isActive: index === wsHolder.activeIdx
+                                width: 24; height: 22
+                                Text {
+                                    anchors.centerIn: parent
+                                    text:  modelData.id
+                                    color: parent.isActive ? Theme.wsActiveFg : Theme.clrSubtext0
+                                    font  { family: "JetBrainsMono Nerd Font"; pixelSize: 12; bold: parent.isActive }
+                                    Behavior on color { ColorAnimation { duration: Theme.durFast } }
+                                }
+                                MouseArea {
+                                    anchors.fill: parent
+                                    onClicked: Hyprland.dispatch("workspace " + modelData.id)
+                                    cursorShape: Qt.PointingHandCursor
+                                }
+                            }
                         }
                     }
                 }
