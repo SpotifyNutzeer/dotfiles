@@ -32,11 +32,19 @@ PanelWindow {
     }
 
     anchors { top: true; left: true; right: true }
-    margins { top: 58; left: 12; right: 12 }
+    margins { top: Theme.overlayTop; left: 12; right: 12 }
     exclusiveZone: -1
     color: "transparent"
     implicitHeight: musicOpen ? 175 : 4
     Behavior on implicitHeight { NumberAnimation { duration: 280; easing.type: Easing.InOutCubic } }
+
+    // Zen: Mantle-Fläche, die nahtlos aus der Bar wächst (Flares + Jelly)
+    ZenPanelSurface {
+        targetX:     panel.x
+        targetWidth: panel.width
+        panelHeight: panel.height
+        open:        overlay.musicOpen
+    }
 
     // ── Panel (unter Music Island zentriert) ─────────────────────────────────
     Rectangle {
@@ -50,8 +58,8 @@ PanelWindow {
         width: Math.max(overlay.islandWidth, 290)
 
         radius: Theme.radius
-        color:  Theme.panelBg
-        border  { color: Theme.borderColor(0.55); width: 2 }
+        color:  Theme.zen ? "transparent" : Theme.panelBg
+        border  { color: Theme.borderColor(0.55); width: Theme.overlayBorderWidth }
         clip:   true
         opacity: overlay.musicOpen ? 1.0 : 0.0
         Behavior on opacity { NumberAnimation { duration: 220; easing.type: Easing.InOutQuad } }

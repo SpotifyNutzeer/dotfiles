@@ -87,19 +87,27 @@ PanelWindow {
     }
 
     anchors { top: true; left: true; right: true }
-    margins { top: 58; left: 12; right: 12 }
+    margins { top: Theme.overlayTop; left: 12; right: 12 }
     exclusiveZone: -1
     color: "transparent"
     implicitHeight: statsOpen ? 228 : 4
     Behavior on implicitHeight { NumberAnimation { duration: 300; easing.type: Easing.InOutCubic } }
 
     // ── Haupt-Panel ──────────────────────────────────────────────────────────
+    ZenPanelSurface {
+        targetX:     statsPanel.x
+        targetWidth: statsPanel.width
+        panelHeight: statsPanel.height
+        open:        overlay.statsOpen
+    }
+
     Rectangle {
+        id: statsPanel
         anchors { top: parent.top; bottom: parent.bottom; horizontalCenter: parent.horizontalCenter }
         width:  overlay.panelWidth
         radius: Theme.radius
-        color:  Theme.panelBg
-        border  { color: Theme.borderColor(0.55); width: 2 }
+        color:  Theme.zen ? "transparent" : Theme.panelBg
+        border  { color: Theme.borderColor(0.55); width: Theme.overlayBorderWidth }
         clip:   true
         opacity: overlay.statsOpen ? 1.0 : 0.0
         Behavior on opacity { NumberAnimation { duration: 220; easing.type: Easing.InOutQuad } }
