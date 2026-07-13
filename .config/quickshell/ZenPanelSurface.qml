@@ -41,13 +41,18 @@ Item {
     Canvas {
         id: canvas
         anchors.fill: parent
+        // Reaktive Farb-Bindung wie in Frame.qml: onPaint allein trackt Theme
+        // nicht — Variantenwechsel/asynchroner State-Load würde sonst eine
+        // veraltete Farbe einbacken.
+        property color fillColor: Theme.panelBg
+        onFillColorChanged: requestPaint()
         onPaint: {
             var ctx = getContext("2d")
             ctx.reset()
             var w = width, h = height
             var ff = surface.f, rr = Math.min(surface.r, h)
             if (w <= 0 || h <= 0) return
-            ctx.fillStyle = String(Theme.panelBg)
+            ctx.fillStyle = String(fillColor)
             ctx.beginPath()
             // Oberkante: volle Breite (liegt an der Bar an)
             ctx.moveTo(0, 0)
