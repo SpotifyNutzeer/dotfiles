@@ -7,22 +7,25 @@ Singleton {
     id: root
 
     // ── Aktive Variante ──────────────────────────────────────────────
-    property string variant: "mocha"                  // "mocha" | "liquidglass"
+    property string variant: "mocha"                  // "mocha" | "liquidglass" | "zen"
+    readonly property var  variants: ["mocha", "liquidglass", "zen"]
     readonly property bool glass: variant === "liquidglass"
+    readonly property bool zen:   variant === "zen"
 
     readonly property string stateDir:
         (Quickshell.env("XDG_STATE_HOME") || (Quickshell.env("HOME") + "/.local/state")) + "/quickshell"
     readonly property string statePath: stateDir + "/theme"
 
     function setVariant(name) {
-        if (name !== "mocha" && name !== "liquidglass")
+        if (variants.indexOf(name) === -1)
             return
         variant = name
         stateFile.setText(name + "\n")
     }
 
+    // Rotiert durch alle Varianten: mocha → liquidglass → zen → mocha
     function toggle() {
-        setVariant(variant === "mocha" ? "liquidglass" : "mocha")
+        setVariant(variants[(variants.indexOf(variant) + 1) % variants.length])
     }
 
     // ── Persistenz: einmal lesen beim Start, schreiben bei Änderung ───
@@ -34,7 +37,7 @@ Singleton {
         printErrors: false                            // fehlende Datei beim Erststart ist ok
         onLoaded: {
             const t = text().trim()
-            if (t === "mocha" || t === "liquidglass")
+            if (root.variants.indexOf(t) !== -1)
                 root.variant = t
         }
     }
@@ -42,24 +45,29 @@ Singleton {
     // ── Glas-spezifische Token ───────────────────────────────────────
     // Im Glas-Look bleibt die Border in der Sky/Aqua-Tönung des Mocha-Themes,
     // aber deutlich weicher (Alpha ~0.4×), damit sie nicht dominiert.
+    // In Zen sind alle Border-Breiten 0 — der Rückgabewert ist dort egal.
     function borderColor(a) {
         return glass ? Qt.rgba(0.72, 0.94, 1.00, a * 0.85)
                      : Qt.rgba(0.537, 0.863, 0.922, a)
     }
 
     // Aqua-getönte, durchscheinende Glasfläche (statt reinem Weiß) – wirkt erst
-    // mit Compositor-Blur als frosted Glass.
-    readonly property color panelBg: glass ? Qt.rgba(0.45, 0.80, 0.85, 0.32) : "#1e1e2e"
+    // mit Compositor-Blur als frosted Glass. Zen: opakes Mantle — Bar, Frame
+    // und angedockte Overlays sind EINE Fläche.
+    readonly property color panelBg: zen ? "#181825"
+                                   : glass ? Qt.rgba(0.45, 0.80, 0.85, 0.32) : "#1e1e2e"
     // Tiefere Variante für Panels, die im Mocha-Look auf clrMantle saßen
     // (SidePanel, Notification). Im Glas-Look identisch zu panelBg.
-    readonly property color panelBgDeep: glass ? Qt.rgba(0.45, 0.80, 0.85, 0.32) : "#181825"
+    readonly property color panelBgDeep: zen ? "#181825"
+                                       : glass ? Qt.rgba(0.45, 0.80, 0.85, 0.32) : "#181825"
     readonly property color rim:     glass ? Qt.rgba(0.70, 0.95, 1.00, 0.25) : "transparent"
-    readonly property int   radius:  glass ? 16 : 12
-    readonly property color accent:  glass ? "#88d8ff" : "#89dceb"
+    readonly property int   radius:  zen ? 20 : glass ? 16 : 12
+    readonly property color accent:  zen ? "#94e2d5" : glass ? "#88d8ff" : "#89dceb"
     // Oberer Farbstopp des Audio-Visualizer-Gradienten (heller Sky-Highlight).
     readonly property color vizBarTop: glass ? Qt.rgba(0.80, 0.96, 1.00, 1.0) : "#c8eef5"
 
     // ── Semantische Palette (Namen wie im Altcode) ───────────────────
+    readonly property color clrCrust:    "#11111b"
     readonly property color clrBase:     glass ? "#0b0814"            : "#1e1e2e"
 
     readonly property color clrSurface0: glass ? Qt.rgba(0.45,0.80,0.85,0.26) : "#313244"
@@ -78,4 +86,49 @@ Singleton {
     readonly property color clrSapphire: glass ? "#7dd3fc"            : "#74c7ec"
     readonly property color clrMauve:    glass ? "#d8b4fe"            : "#cba6f7"
     readonly property color clrPink:     glass ? "#f9a8d4"            : "#f5c2e7"
+
+    // ── Zen: Bar & Inseln ─────────────────────────────────────────────
+    // Zen: die Bar SELBST ist die Fläche (Mantle, volle Breite, keine Margins);
+    // die Inseln werden zu unsichtbaren Layout-Containern.
+    readonly property color barBg:            zen ? "#181825" : "transparent"
+    readonly property int   barMargin:        zen ? 0  : 10
+    readonly property int   barHeight:        44
+    readonly property color islandBg:         zen ? "transparent" : panelBg
+    readonly property int   islandBorderWidth: zen ? 0 : 2
+    readonly property bool  sepVisible:       !zen
+
+    // ── Zen: Farbdisziplin ────────────────────────────────────────────
+    // Statt Regenbogen-Stats: Icons teal, Uhr sky, kritisches rot — sonst nichts.
+    function statIcon(fallback) { return zen ? clrTeal : fallback }
+    readonly property color clockColor: zen ? clrSky  : clrPink
+    readonly property color wsActiveBg: zen ? clrTeal : clrSky
+    readonly property color wsActiveFg: zen ? clrCrust : clrBase
+
+    // ── Zen: Overlays & Panels ────────────────────────────────────────
+    readonly property int   panelRadius:        zen ? 20 : 16       // SidePanel-Ecken
+    readonly property int   overlayBorderWidth: zen ? 0  : 2        // Music/Stats
+    readonly property int   overlayTop:         zen ? 44 : 58       // Fensterabstand oben
+    readonly property color notifBg:            zen ? "#1e1e2e" : panelBgDeep
+    readonly property int   notifBorderWidth:   zen ? 0  : 1
+    readonly property int   notifRadius:        zen ? 16 : radius
+    readonly property int   notifTop:           zen ? 54 : 56
+    readonly property int   notifRight:         zen ? 18 : 14
+    readonly property int   sidePanelBorderWidth: zen ? 0 : 1
+    readonly property int   sidePanelMarginTop:   zen ? 0 : 8
+    readonly property int   sidePanelMarginLeft:  zen ? 0 : 12
+    readonly property int   sidePanelMarginBottom: zen ? 0 : 8
+    readonly property int   dismissLeft:        zen ? 304 : 316     // SidePanel-Breite + Margin + Puffer
+    readonly property color searchBg:           zen ? "#1e1e2e" : "#181825"
+    readonly property int   searchBorderWidth:  zen ? 0  : 2
+    readonly property int   searchRadius:       zen ? 20 : 16
+
+    // ── Zen: Frame & Viewport ─────────────────────────────────────────
+    readonly property int  frameThickness: 10
+    readonly property int  viewportRadius: 16
+    readonly property int  filletSize:     12    // konkave Flares an Panel-Oberkanten
+    readonly property bool shadowEnabled:  zen   // weicher Schatten nur auf freien Cards
+
+    // ── Zen: Motion ───────────────────────────────────────────────────
+    readonly property int durFast:   200   // Farbe/Opacity
+    readonly property int durNormal: 350   // Position/Größe (mit Überschwingen)
 }
