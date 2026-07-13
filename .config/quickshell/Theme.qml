@@ -156,8 +156,25 @@ Singleton {
         // hier noch nicht aktualisiert (ein Tick stale in beide Richtungen),
         // dadurch würde sonst immer der VORHERIGE Zustand angewendet.
         hyprProc.command = ["hyprctl", "--batch", variant === "zen" ? hyprZen : hyprRestore]
+        // running erst zurücksetzen: true→true wäre ein No-Op und würde
+        // den neuen Batch verwerfen (schneller Doppel-Toggle).
+        hyprProc.running = false
         hyprProc.running = true
     }
-    onVariantChanged: applyHyprland()
-    Component.onCompleted: applyHyprland()
+
+    // Rofi folgt der Variante über einen Symlink; ~/.config/rofi/config.rasi
+    // bindet ihn ein. Liquidglass nutzt das Mocha-Rasi (kein eigenes Glas-Rofi).
+    Process { id: rofiLinkProc }
+    function applyRofiTheme() {
+        // variant statt zen: abgeleitete Properties sind im onVariantChanged-
+        // Handler noch einen Tick alt (siehe applyHyprland).
+        var target = (variant === "zen") ? "catppuccin-zen.rasi" : "catppuccin-mocha.rasi"
+        rofiLinkProc.running = false
+        rofiLinkProc.command = ["/bin/sh", "-c",
+            "ln -sfn \"$HOME/.config/rofi/" + target + "\" \"" + stateDir + "/rofi-theme.rasi\""]
+        rofiLinkProc.running = true
+    }
+
+    onVariantChanged: { applyHyprland(); applyRofiTheme() }
+    Component.onCompleted: { applyHyprland(); applyRofiTheme() }
 }

@@ -9,4 +9,4 @@ configuration {
     font:           "JetBrainsMono Nerd Font 13";
 }
 
-@theme "~/.config/rofi/catppuccin-mocha.rasi"
+@theme "~/.local/state/quickshell/rofi-theme.rasi"
