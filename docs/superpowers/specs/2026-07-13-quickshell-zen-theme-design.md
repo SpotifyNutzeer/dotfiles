@@ -24,6 +24,7 @@ minimalistisch — inspiriert von [caelestia-dots/shell](https://github.com/cael
 | Screen-Frame | Ja — Bar + Rahmen (links/rechts/unten) als eine Fläche, Desktop als abgerundetes Viewport |
 | Typografie | Alles bleibt JetBrainsMono Nerd Font (keine neuen Font-Abhängigkeiten) |
 | Architektur | Token-getrieben: Theme.qml bekommt volles Token-Set, Komponenten lesen nur Tokens; gezielte Verzweigungen nur wo Zen strukturell abweicht |
+| Vollständigkeit | SDF-/Metaball-Merge und Jelly-Deform im Scope; Hyprland-Fensterdeko (Gaps, Border-Farbe, Rounding) und Rofi schalten mit um, damit sich das Ergebnis komplett anfühlt |
 | Name | `zen` |
 
 ## Look & Feel
@@ -77,6 +78,24 @@ teal/mauve je Modulgruppe) zurückgenommen:
   Radius ~16 px, oben rechts im Viewport (Abstand: Frame + Gap).
 - **SearchResults:** randlos, Base-Fläche, größere Rundung, Schatten.
 
+### Nahtstellen & Blob-Wirkung (SDF)
+
+Damit sich Bar, Frame und Panels wie **eine** zusammenhängende Fläche anfühlen
+(Caelestias Metaball-Prinzip), werden alle Übergänge organisch verrundet:
+
+- **Overlay ↔ Bar (Music-/StatsOverlay):** Der Overlay-Hintergrund wird als
+  ShaderEffect mit Rounded-Rect-SDF + smooth-min gezeichnet — das Panel
+  „quillt“ mit konkaven Fillets aus der Bar-Unterkante, statt nur bündig
+  anzuliegen. Beim Öffnen/Schließen animiert der Merge (Panel wächst aus der
+  Fläche heraus).
+- **SidePanel ↔ Frame/Bar:** konkave Fillets an den Anschlussstellen
+  (oben zur Bar, links zum Frame).
+- **Viewport-Ecken:** konkave Viertelkreis-Fillets wie oben beschrieben
+  (Canvas reicht hier, kein Shader nötig).
+- Fallback: Wo der Shader unverhältnismäßig wird, sind Canvas-Fillets
+  (vorgerenderte konkave Ecken) als einfachere Umsetzung zulässig — die
+  Optik zählt, nicht die Technik.
+
 ### Motion
 
 Material-3-angelehnte Tokens, nur für Zen-spezifische Animationen:
@@ -84,6 +103,9 @@ Material-3-angelehnte Tokens, nur für Zen-spezifische Animationen:
 - Positions-/Größenwechsel (Workspace-Indikator, Overlay-Slide): ~350 ms,
   Easing mit leichtem Überschwingen (Bezier ≈ 0.38, 1.21, 0.22, 1.0)
 - Farb-/Opacity-Wechsel: ~200 ms, weich (OutCubic o. ä.)
+- **Jelly-Deform (Caelestia-Signature):** Overlays/Panels bekommen beim
+  Auf-/Zuklappen einen leichten Squash-and-Stretch (Skalierung ~3–10 %,
+  koppelt an die Slide-Geschwindigkeit).
 - Bestehende Animationen in Mocha/Liquidglass bleiben unverändert.
 
 ## Token-Architektur (Theme.qml)
@@ -123,30 +145,63 @@ weicht ab. Auszug der wichtigsten Tokens:
 - Genaue heutige Werte (z. B. Overlay-Top-Margins) werden beim Umsetzen aus
   dem Code übernommen — Anspruch bleibt Pixelgleichheit der Alt-Themes.
 
-### Hyprland-Kopplung
+### Programm-Harmonisierung (Hyprland & Rofi)
 
-- Bei Variantenwechsel **und beim Start** setzt Theme.qml per `Process`:
-  `hyprctl keyword general:gaps_out <wert>` — Zen: **6**, sonst: **10**
-  (Restore-Wert als dokumentierte Konstante; muss zu
-  `.config/hypr/hyprland.conf` passen, dort steht heute `gaps_out = 10`).
+**Quelle der Wahrheit für Hyprland ist das NixOS-Repo:**
+`~/git/nixos/home/program-configs/linux/hyprland.nix` (home-manager,
+hyprlang-Settings). Die `.config/hypr/hyprland.conf` im dotfiles-Repo ist
+Legacy. Statische Hyprland-Änderungen gehören in die .nix; die
+Zen-Umschaltung selbst läuft zur Laufzeit über `hyprctl keyword` und braucht
+keinen Rebuild.
+
+Bei Variantenwechsel **und beim Start** setzt Theme.qml per `Process`
+(`hyprctl --batch`), damit auch Hyprlands Fenster-Deko zum Zen-Ansatz passt:
+
+| Keyword | Zen | Restore (= hyprland.nix) |
+|---|---|---|
+| `general:gaps_out` | 6 | 10 |
+| `general:col.active_border` | solid Teal `rgb(94e2d5)` | `rgb(89dceb) rgb(94e2d5) 45deg` |
+| `decoration:rounding` | 12 | 10 |
+
+- Der solide Teal-Border neutralisiert nebenbei die rotierende
+  `borderangle`-Gradient-Animation (auf einfarbigem Border unsichtbar) —
+  ruhig, ohne die Animation global anzufassen.
+- Restore-Werte stehen als dokumentierte Konstanten in Theme.qml und müssen
+  zur hyprland.nix passen (dort heute: `gaps_out = 10`, `rounding = 10`,
+  `col.active_border = "$sky $teal 45deg"`).
 - Ausführung auch beim Start macht das selbstheilend (Absturz unter Zen →
-  Neustart repariert die Gaps passend zur geladenen Variante).
-- `rounding = 10` und `gaps_in = 5` bleiben unangetastet.
+  Neustart repariert die Keywords passend zur geladenen Variante).
+- `gaps_in = 5`, `border_size = 2` und die bestehende Blur-Layerrule für
+  quickshell bleiben unangetastet.
+
+**Rofi:** bekommt einen Zen-Look, damit Launcher/Menüs nicht aus dem Theme
+fallen:
+
+- Neue `.config/rofi/catppuccin-zen.rasi` im dotfiles-Repo: Mantle-Fläche,
+  randlos, große Rundung (~20 px), Teal-Selektion mit Crust-Text, Mono-Font.
+- Umschalt-Mechanismus: Theme.qml pflegt bei Variantenwechsel einen Symlink
+  `~/.local/state/quickshell/rofi-theme.rasi` → passende .rasi
+  (mocha/liquidglass: bestehende `catppuccin-mocha.rasi`, zen: neue Datei).
+  `theme-switch.sh` und die Rofi-Config binden das Theme über diesen
+  Symlink ein, sodass auch `rofi -show drun` (Hyprland-Keybind) automatisch
+  passend aussieht.
 
 ## Komponenten-Änderungen
 
 | Datei | Änderung |
 |---|---|
-| `Theme.qml` | Drei Varianten, Token-Set, Hyprland-Kopplung |
+| `Theme.qml` | Drei Varianten, Token-Set, Hyprland-Keywords, Rofi-Theme-Symlink |
 | `Bar.qml` | Fenster-Bg/Margins aus Tokens; Insel-Optik aus Tokens; Trennstriche an `sepVisible`; Workspace-Modul mit zwei Darstellungen (heutige Pills vs. Zen-Capsule mit Gleit-Indikator); Stat-Icon-Farben über `Theme.statIcon(...)` |
 | `Frame.qml` (neu) | 3 Kanten-PanelWindows (exclusiveZone = Dicke) + 4 Eck-Fenster mit konkaven Fillets (Canvas); klick-durchlässig; nur bei `Theme.zen` aktiv |
+| SDF-Hintergrund (neu, z. B. `ZenPanelSurface.qml`) | Wiederverwendbarer Overlay-/Panel-Hintergrund: Rounded-Rect-SDF + smooth-min-Merge zur Bar-/Frame-Kante, animierte Emergence, Jelly-Deform |
 | `shell.qml` | Frame einhängen; Dismiss-Fenster-Margins (heute hart 58 / 316) an Bar-Geometrie/Tokens binden |
-| `MusicOverlay.qml`, `StatsOverlay.qml` | Radius/Border/Bg/Top-Gap aus Tokens; Zen: nahtloses Andocken, nur untere Ecken gerundet (Radius + deckendes Rechteck an der Oberkante) |
-| `SidePanel.qml` | Margins/Radius/Bg aus Tokens; Zen: am Frame angedockt, rechte Ecken gerundet |
+| `MusicOverlay.qml`, `StatsOverlay.qml` | Radius/Border/Bg/Top-Gap aus Tokens; Zen: nahtloses Andocken via SDF-Hintergrund (konkave Fillets zur Bar) |
+| `SidePanel.qml` | Margins/Radius/Bg aus Tokens; Zen: am Frame angedockt, Fillets an den Anschlussstellen, rechte Ecken gerundet |
 | `NotificationPopup.qml` | Radius/Border/Bg/Schatten aus Tokens |
 | `SearchResults.qml` | Hartkodierte Farben (`#181825` u. a.) durch Tokens ersetzen |
 | `StatItem.qml`, `BarButton.qml`, `MiniGraph.qml`, `SearchItem.qml` | Hartkodierte Defaults (`#cdd6f4`, `#89b4fa`) an Theme binden — gleiche Werte wie heute, kein sichtbarer Unterschied in Alt-Themes |
-| `scripts/theme-switch.sh` | Menü mit drei Einträgen (`󰧉 Mocha / 󰂭 Liquidglass / 󰚀 Zen`); `toggle` nutzt die Shell-Rotation |
+| `scripts/theme-switch.sh` | Menü mit drei Einträgen (`󰧉 Mocha / 󰂭 Liquidglass / 󰚀 Zen`); `toggle` nutzt die Shell-Rotation; Menü-Theme über den Rofi-Symlink |
+| `.config/rofi/catppuccin-zen.rasi` (neu) + Rofi-Config | Zen-Rasi; Config bindet Theme über `~/.local/state/quickshell/rofi-theme.rasi` ein |
 
 Bekannter Nebenbefund (wird beim Token-Umbau mit erledigt):
 `SearchItem.qml:19` nutzt `Qt.rgba(180, 190, 254, 0.15)` — Werte > 1 clampen
@@ -163,20 +218,29 @@ Palette gebunden.
 3. **Zen funktional:** Frame-Klick-Durchlässigkeit (Fenster am Rand
    bedienen), Workspace-Indikator-Animation, nahtloses Overlay-Andocken,
    Notification-Look, Vollbild deckt Frame ab.
-4. **Gaps-Kopplung:** mehrfach zwischen allen Varianten wechseln,
-   `hyprctl getoption general:gaps_out` prüfen (6 unter Zen, 10 sonst);
-   qs-Neustart unter jeder Variante.
-5. State-Datei (`~/.local/state/quickshell/theme`) nach jedem Wechsel prüfen.
+4. **Hyprland-Kopplung:** mehrfach zwischen allen Varianten wechseln;
+   `hyprctl getoption general:gaps_out / general:col.active_border /
+   decoration:rounding` prüfen (Zen: 6 / solid teal / 12, sonst: 10 /
+   Gradient / 10); qs-Neustart unter jeder Variante.
+5. **Rofi:** `rofi -show drun` und `theme-switch.sh menu` unter Zen und
+   Mocha öffnen — Look muss zur aktiven Variante passen; Symlink-Ziel
+   prüfen.
+6. **SDF/Fillets:** Overlay-Öffnen unter Zen — konkave Übergänge zur Bar,
+   Jelly-Deform sichtbar, keine Artefakte an den Fillet-Kanten (auch bei
+   150 % Skalierung, falls genutzt).
+7. State-Datei (`~/.local/state/quickshell/theme`) nach jedem Wechsel prüfen.
 
-Hinweis Deployment: Das Repo wird per NixOS-Flake ausgerollt — für den
-Dauerbetrieb ist nach dem Merge ein Rebuild nötig; für die Entwicklung
-reicht `qs -p`.
+Hinweis Deployment: Quickshell- und Rofi-Configs liegen im dotfiles-Repo
+und werden vom NixOS-Repo per Flake-Input gezogen — für den Dauerbetrieb ist
+nach dem Merge ein Flake-Update + Rebuild nötig; für die Entwicklung reicht
+`qs -p`. Sollten statische Hyprland-Änderungen nötig werden, gehören sie in
+`~/git/nixos/home/program-configs/linux/hyprland.nix` (separates Repo,
+eigener Commit).
 
 ## Nicht im Scope
 
 - Keine Modul-Reduktion, kein Auto-Hide der Bar
 - Keine dynamischen Wallpaper-Farben (Palette bleibt fix Mocha)
 - Keine neuen Fonts, keine Material Symbols (Nerd-Font-Glyphen bleiben)
-- Kein SDF-/Metaball-Shader wie im Original — die „eine Fläche“-Wirkung
-  entsteht über gleiche Farbe + Fillets nur an den vier Viewport-Ecken
-- Keine Änderungen an Rofi, Hyprland-Rounding oder anderen Programmen
+- Keine Änderungen an weiteren Programmen jenseits von Hyprland
+  (Runtime-Keywords) und Rofi (z. B. Kitty, GTK/Qt-Themes, Cursor)
