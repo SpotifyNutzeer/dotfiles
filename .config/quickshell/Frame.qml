@@ -39,10 +39,14 @@ PanelWindow {
     // Rotation. Füllung = Eckquadrat minus Viertelkreis (Radius r).
     component Fillet: Canvas {
         width: frame.r; height: frame.r
+        // Reaktive Farb-Bindung: Variantenwechsel bei sichtbarem Frame
+        // zeichnet die Ecken neu (onPaint allein trackt Theme nicht).
+        property color fillColor: Theme.panelBg
+        onFillColorChanged: requestPaint()
         onPaint: {
             var ctx = getContext("2d")
             ctx.reset()
-            ctx.fillStyle = String(Theme.panelBg)
+            ctx.fillStyle = String(fillColor)
             ctx.beginPath()
             ctx.moveTo(0, 0)
             ctx.lineTo(width, 0)
