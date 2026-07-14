@@ -27,7 +27,7 @@ PanelWindow {
     color: "transparent"
     visible: popups.length > 0
 
-    implicitWidth: 380
+    implicitWidth: 380 + (Theme.shadowEnabled ? 24 : 0)
     implicitHeight: col.implicitHeight + (Theme.shadowEnabled ? 24 : 0)
 
     function removePopup(notif) {
