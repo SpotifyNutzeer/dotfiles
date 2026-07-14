@@ -7,7 +7,7 @@ Singleton {
     id: root
 
     // ── Aktive Variante ──────────────────────────────────────────────
-    property string variant: "mocha"                  // "mocha" | "liquidglass" | "zen"
+    property string variant: "zen"                    // "mocha" | "liquidglass" | "zen" — Default: zen
     readonly property var  variants: ["mocha", "liquidglass", "zen"]
     readonly property bool glass: variant === "liquidglass"
     readonly property bool zen:   variant === "zen"
