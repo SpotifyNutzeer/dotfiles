@@ -148,30 +148,40 @@ Singleton {
 
     Process {
         id: hyprProc
-        // command wird vor jedem Start gesetzt; stale-Prozess unkritisch.
+        // command wird vor jedem Start neu gesetzt; running wird davor explizit
+        // zurückgesetzt, denn true→true wäre ein No-Op und würde den neuen
+        // Batch verwerfen (schneller Doppel-Toggle).
     }
     function applyHyprland() {
         // Absichtlich variant === "zen" statt der readonly-property "zen":
         // beim Feuern von onVariantChanged ist die abhängige Bindung "zen"
         // hier noch nicht aktualisiert (ein Tick stale in beide Richtungen),
         // dadurch würde sonst immer der VORHERIGE Zustand angewendet.
-        hyprProc.command = ["hyprctl", "--batch", variant === "zen" ? hyprZen : hyprRestore]
-        // running erst zurücksetzen: true→true wäre ein No-Op und würde
-        // den neuen Batch verwerfen (schneller Doppel-Toggle).
         hyprProc.running = false
+        hyprProc.command = ["hyprctl", "--batch", variant === "zen" ? hyprZen : hyprRestore]
         hyprProc.running = true
     }
 
     // Rofi folgt der Variante über einen Symlink; ~/.config/rofi/config.rasi
     // bindet ihn ein. Liquidglass nutzt das Mocha-Rasi (kein eigenes Glas-Rofi).
+    // command wird vor jedem Start neu gesetzt; running wird davor explizit
+    // zurückgesetzt, denn true→true wäre ein No-Op und würde den neuen
+    // Batch verwerfen (schneller Doppel-Toggle).
     Process { id: rofiLinkProc }
     function applyRofiTheme() {
         // variant statt zen: abgeleitete Properties sind im onVariantChanged-
         // Handler noch einen Tick alt (siehe applyHyprland).
         var target = (variant === "zen") ? "catppuccin-zen.rasi" : "catppuccin-mocha.rasi"
         rofiLinkProc.running = false
+        // Fester Pfad ~/.local/state statt stateDir: config.rasi und
+        // theme-switch.sh können XDG_STATE_HOME nicht expandieren — der fixe
+        // Pfad ist der gemeinsame Vertrag. mkdir eingefaltet, weil beim
+        // allerersten Start das Verzeichnis noch fehlen kann (Race mit dem
+        // asynchronen mkdir-Process oben). Außer den zwei bekannten
+        // Dateinamen ist nichts dynamisch — kein Quoting-Risiko.
         rofiLinkProc.command = ["/bin/sh", "-c",
-            "ln -sfn \"$HOME/.config/rofi/" + target + "\" \"" + stateDir + "/rofi-theme.rasi\""]
+            "mkdir -p \"$HOME/.local/state/quickshell\" && " +
+            "ln -sfn \"$HOME/.config/rofi/" + target + "\" \"$HOME/.local/state/quickshell/rofi-theme.rasi\""]
         rofiLinkProc.running = true
     }
 

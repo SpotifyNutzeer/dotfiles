@@ -20,13 +20,15 @@ PanelWindow {
 
     screen: barScreen
     anchors { top: true; right: true }
-    margins { top: Theme.notifTop; right: Theme.notifRight }
+    // Zen: Fenster reicht bis an den Rand, der Sichtabstand (notifRight) wandert
+    // als innerer Margin an die Column — so hat der Schatten rechts Platz.
+    margins { top: Theme.notifTop; right: Theme.shadowEnabled ? 0 : Theme.notifRight }
     exclusiveZone: -1
     color: "transparent"
     visible: popups.length > 0
 
     implicitWidth: 380
-    implicitHeight: col.implicitHeight
+    implicitHeight: col.implicitHeight + (Theme.shadowEnabled ? 24 : 0)
 
     function removePopup(notif) {
         root.popups = root.popups.filter(n => n !== notif)
@@ -41,7 +43,7 @@ PanelWindow {
 
     Column {
         id: col
-        anchors { top: parent.top; right: parent.right }
+        anchors { top: parent.top; right: parent.right; rightMargin: Theme.shadowEnabled ? Theme.notifRight : 0 }
         width: 360
         spacing: 8
 
