@@ -140,7 +140,7 @@ Singleton {
     // Restore = Alt-Werte für mocha/liquidglass. Läuft auch beim Start →
     // selbstheilend.
     readonly property string hyprZen:
-        "keyword general:gaps_out 16,26,26,26 ; " +
+        "keyword general:gaps_out 12,22,22,22 ; " +
         "keyword general:col.active_border rgb(94e2d5) ; " +
         "keyword decoration:rounding 12"
     readonly property string hyprRestore:
