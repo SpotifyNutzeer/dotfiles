@@ -135,10 +135,12 @@ Singleton {
     // ── Hyprland-Kopplung ─────────────────────────────────────────────
     // Zen passt die Fenster-Deko an (Gaps machen Platz für den Frame, solider
     // Teal-Border statt rotierendem Gradient, Rounding harmonisiert mit dem
-    // Viewport). Restore-Werte MÜSSEN zu ~/git/nixos/home/program-configs/
-    // linux/hyprland.nix passen. Läuft auch beim Start → selbstheilend.
+    // Viewport). Zen-Werte MÜSSEN zu den Defaults in ~/git/nixos/home/
+    // program-configs/linux/hyprland.nix passen (zen ist Default-Variante);
+    // Restore = Alt-Werte für mocha/liquidglass. Läuft auch beim Start →
+    // selbstheilend.
     readonly property string hyprZen:
-        "keyword general:gaps_out 6,16,16,16 ; " +
+        "keyword general:gaps_out 16,26,26,26 ; " +
         "keyword general:col.active_border rgb(94e2d5) ; " +
         "keyword decoration:rounding 12"
     readonly property string hyprRestore:

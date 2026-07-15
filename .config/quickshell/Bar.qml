@@ -458,8 +458,10 @@ PanelWindow {
                 Rectangle {
                     visible: Theme.zen
                     Layout.alignment: Qt.AlignVCenter
-                    width:  wsRow.width + 6
-                    height: 28
+                    // implicit*, nicht width/height: das RowLayout layoutet nach
+                    // impliziter Groesse und wuerde explizite Masse auf 0 druecken.
+                    implicitWidth:  wsRow.width + 6
+                    implicitHeight: 28
                     radius: height / 2
                     color:  Theme.clrSurface0
 
