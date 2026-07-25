@@ -142,11 +142,13 @@ Singleton {
     readonly property string hyprZen:
         "keyword general:gaps_out 12,22,22,22 ; " +
         "keyword general:col.active_border rgb(94e2d5) ; " +
-        "keyword decoration:rounding 12"
+        "keyword decoration:rounding 12 ; " +
+        "keyword decoration:glow:enabled false"
     readonly property string hyprRestore:
         "keyword general:gaps_out 10 ; " +
         "keyword general:col.active_border rgb(89dceb) rgb(94e2d5) 45deg ; " +
-        "keyword decoration:rounding 10"
+        "keyword decoration:rounding 10 ; " +
+        "keyword decoration:glow:enabled true"
 
     Process {
         id: hyprProc
