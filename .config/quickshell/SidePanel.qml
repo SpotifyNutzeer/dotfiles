@@ -77,12 +77,12 @@ PanelWindow {
         var list = Mpris.players.values ?? Mpris.players
         if (!list || list.length === 0) return null
         for (var i = 0; i < list.length; i++)
-            if (list[i].identity?.toLowerCase().includes("tidal") &&
+            if (list[i].identity?.toLowerCase().includes("spotify") &&
                 list[i].playbackState === MprisPlaybackState.Playing) return list[i]
         for (var i = 0; i < list.length; i++)
             if (list[i].playbackState === MprisPlaybackState.Playing) return list[i]
         for (var i = 0; i < list.length; i++)
-            if (list[i].identity?.toLowerCase().includes("tidal")) return list[i]
+            if (list[i].identity?.toLowerCase().includes("spotify")) return list[i]
         return list.length > 0 ? list[0] : null
     }
 

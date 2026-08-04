@@ -192,16 +192,16 @@ PanelWindow {
     // ── MPRIS ─────────────────────────────────────────────────────────────────
     property var activePlayer: {
         var list = Mpris.players.values ?? Mpris.players
-        // 1. Tidal playing
+        // 1. Spotify playing
         for (var i = 0; i < list.length; i++)
-            if (list[i].identity?.toLowerCase().includes("tidal") &&
+            if (list[i].identity?.toLowerCase().includes("spotify") &&
                 list[i].playbackState === MprisPlaybackState.Playing) return list[i]
         // 2. Any other source playing
         for (var i = 0; i < list.length; i++)
             if (list[i].playbackState === MprisPlaybackState.Playing) return list[i]
-        // 3. Tidal paused
+        // 3. Spotify paused
         for (var i = 0; i < list.length; i++)
-            if (list[i].identity?.toLowerCase().includes("tidal")) return list[i]
+            if (list[i].identity?.toLowerCase().includes("spotify")) return list[i]
         // 4. First available
         return list.length > 0 ? list[0] : null
     }
