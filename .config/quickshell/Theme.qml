@@ -139,16 +139,24 @@ Singleton {
     // program-configs/linux/hyprland.nix passen (zen ist Default-Variante);
     // Restore = Alt-Werte für mocha/liquidglass. Läuft auch beim Start →
     // selbstheilend.
+    // Hyprland 0.57 entfernt das .conf-Format; die NixOS-Config läuft seit der
+    // Migration auf Hyprlands Lua-Format. Unter dem Lua-Config-Manager antwortet
+    // `hyprctl keyword` nur noch mit "keyword can't work with non-legacy parsers.
+    // Use eval." (dispatchKeyword ist auf CONFIG_LEGACY gegated) → stattdessen
+    // ein hl.config()-Aufruf durch `hyprctl eval`. Ein einziger Aufruf statt
+    // --batch, weil hl.config ohnehin ein verschachteltes Table nimmt.
+    // Farben in einfachen Anführungszeichen: Lua-Strings, so bleibt das
+    // umschließende QML-String-Literal frei von Escapes.
     readonly property string hyprZen:
-        "keyword general:gaps_out 12,22,22,22 ; " +
-        "keyword general:col.active_border rgb(94e2d5) ; " +
-        "keyword decoration:rounding 12 ; " +
-        "keyword decoration:glow:enabled false"
+        "hl.config({ " +
+        "general = { gaps_out = { top = 12, right = 22, bottom = 22, left = 22 }, " +
+        "col = { active_border = 'rgb(94e2d5)' } }, " +
+        "decoration = { rounding = 12, glow = { enabled = false } } })"
     readonly property string hyprRestore:
-        "keyword general:gaps_out 10 ; " +
-        "keyword general:col.active_border rgb(89dceb) rgb(94e2d5) 45deg ; " +
-        "keyword decoration:rounding 10 ; " +
-        "keyword decoration:glow:enabled true"
+        "hl.config({ " +
+        "general = { gaps_out = 10, " +
+        "col = { active_border = { colors = { 'rgb(89dceb)', 'rgb(94e2d5)' }, angle = 45 } } }, " +
+        "decoration = { rounding = 10, glow = { enabled = true } } })"
 
     Process {
         id: hyprProc
@@ -162,7 +170,7 @@ Singleton {
         // hier noch nicht aktualisiert (ein Tick stale in beide Richtungen),
         // dadurch würde sonst immer der VORHERIGE Zustand angewendet.
         hyprProc.running = false
-        hyprProc.command = ["hyprctl", "--batch", variant === "zen" ? hyprZen : hyprRestore]
+        hyprProc.command = ["hyprctl", "eval", variant === "zen" ? hyprZen : hyprRestore]
         hyprProc.running = true
     }
 
