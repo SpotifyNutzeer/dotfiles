@@ -1,12 +1,12 @@
 [Unit]
-Description=Fosi Audio ZH3 Hardware Gate Defeater
+Description=D&A Alpha Hardware Gate Defeater
 After=pipewire-pulse.service
 Requires=pipewire-pulse.service
 
 [Service]
 Type=simple
-# Wir zwingen den Ton über die Umgebungsvariable direkt und exakt auf den Fosi
-Environment="PULSE_SINK=alsa_output.usb-Fosi_Fosi_Audio_ZH3-00.analog-stereo"
+# Wir zwingen den Ton über die Umgebungsvariable direkt und exakt auf den Alpha
+Environment="PULSE_SINK=alsa_output.usb-D_A_D_A_Alpha-00.analog-stereo"
 
 # play generiert unendlich (-n) ein Brown Noise (-q für leise Konsole)
 # vol 0.01 entspricht 1%. Das hält den DAC wach, ist aber unhörbar.

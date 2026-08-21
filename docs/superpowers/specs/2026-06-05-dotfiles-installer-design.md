@@ -113,7 +113,7 @@ Setup gewollt (`fish_plugins` ist eingecheckt).
   `.config/systemd/user/*.service` nach `~/.config/systemd/user/`.
 - Die im Repo eingecheckten `*.target.wants/`-Verzeichnisse werden **ignoriert**;
   die Aktivierung übernimmt `systemctl --user enable`.
-- Aktiviert: `fosi-keepalive.service`, `hyprpolkitagent.service`.
+- Aktiviert: `dac-keepalive.service`, `hyprpolkitagent.service`.
 - **`sunshine.service` wird übersprungen** (sunshine wird nicht mehr installiert).
 - `systemctl --user daemon-reload` nach dem Verlinken.
 

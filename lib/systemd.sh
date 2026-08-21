@@ -3,7 +3,7 @@
 # Setzt lib/common.sh und lib/symlinks.sh (link_item) voraus.
 #
 # Struktur im Repo (.config/systemd/user):
-#   - Eigene Unit-Dateien liegen direkt als *.service vor (z.B. fosi-keepalive).
+#   - Eigene Unit-Dateien liegen direkt als *.service vor (z.B. dac-keepalive).
 #   - Welche Services aktiv sein sollen, steht in den *.target.wants/-Verzeichnissen
 #     (eingecheckte enable-Symlinks, teils auf paket-bereitgestellte Units unter
 #     /usr/lib/systemd/user). Daraus leiten wir die Aktivierungen ab.
